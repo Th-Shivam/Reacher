@@ -18,6 +18,7 @@ class OutreachInDB(OutreachBase):
     candidate_analysis: Optional[dict] = None
     company_research: Optional[str] = None
     generated_draft: Optional[str] = None
+    draft_review: Optional[dict] = None
     created_at: datetime
     updated_at: datetime
 

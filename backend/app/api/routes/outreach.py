@@ -12,6 +12,7 @@ from app.agents.jd_analyzer import JDAnalyzerAgent
 from app.agents.candidate_analyzer import CandidateAnalyzerAgent
 from app.agents.outreach_writer import OutreachWriterAgent
 from app.agents.research_agent import ResearchAgent
+from app.agents.reviewer_agent import ReviewerAgent
 
 router = APIRouter()
 
@@ -272,3 +273,57 @@ async def generate_outreach_draft(campaign_id: str, user_id: str = Depends(get_c
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Draft Generation Failed: {str(e)}")
+
+@router.post("/{campaign_id}/review-draft")
+async def review_outreach_draft(campaign_id: str, user_id: str = Depends(get_current_user)):
+    """
+    Evaluates the generated email draft using the ReviewerAgent.
+    """
+    try:
+        campaign = await outreach_collection.find_one({"_id": ObjectId(campaign_id), "clerk_id": user_id})
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid Campaign ID")
+        
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+
+    draft = campaign.get("generated_draft")
+    jd = campaign.get("job_description")
+    
+    if not draft:
+        raise HTTPException(status_code=400, detail="No draft found to review. Generate a draft first.")
+
+    # Optimization: if review exists, just return it
+    if campaign.get("draft_review"):
+        return {
+            "status": "success",
+            "campaign_id": campaign_id,
+            "review": campaign["draft_review"],
+            "cached": True
+        }
+
+    try:
+        agent = ReviewerAgent()
+    except ValueError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    try:
+        raw_review = agent.review(jd, draft)
+        clean_json = raw_review.replace("```json", "").replace("```", "").strip()
+        review_data = json.loads(clean_json)
+        
+        await outreach_collection.update_one(
+            {"_id": ObjectId(campaign_id)},
+            {"$set": {
+                "draft_review": review_data,
+                "status": "draft_reviewed"
+            }}
+        )
+        
+        return {
+            "status": "success",
+            "campaign_id": campaign_id,
+            "review": review_data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Draft Review Failed: {str(e)}")

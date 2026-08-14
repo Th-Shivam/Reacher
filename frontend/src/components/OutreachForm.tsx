@@ -11,6 +11,7 @@ interface OutreachCampaign {
   candidate_analysis?: any;
   company_research?: string;
   generated_draft?: string;
+  draft_review?: any;
 }
 
 export const OutreachForm = () => {
@@ -148,6 +149,24 @@ export const OutreachForm = () => {
     }
   };
 
+  const handleReviewDraft = async (campaignId: string) => {
+    try {
+      const token = await getToken();
+      const res = await fetch(`http://localhost:8000/api/outreach/${campaignId}/review-draft`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        await fetchCampaigns();
+      } else {
+        throw new Error("Failed to review draft");
+      }
+    } catch (err: any) {
+      alert(err.message);
+      console.error(err);
+    }
+  };
+
   return (
     <div style={{ marginTop: '2rem', borderTop: '1px solid #ccc', paddingTop: '2rem' }}>
       <h2>Target Job / Outreach Campaign</h2>
@@ -225,11 +244,37 @@ export const OutreachForm = () => {
                   >
                     Generate Draft
                   </button>
+                  {c.generated_draft && (
+                    <button 
+                      onClick={() => handleReviewDraft(c._id)} 
+                      style={{ padding: '5px 10px', cursor: 'pointer', background: '#10b981', color: 'white', border: 'none', borderRadius: '4px' }}
+                    >
+                      Review Draft
+                    </button>
+                  )}
                 </div>
                 {c.generated_draft && (
                   <div style={{ marginTop: '10px', background: '#fff9e6', padding: '15px', borderRadius: '4px', border: '1px solid #ffe066' }}>
                     <strong>Generated Cold Email:</strong>
                     <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', marginTop: '10px' }}>{c.generated_draft}</pre>
+                  </div>
+                )}
+                {c.draft_review && (
+                  <div style={{ marginTop: '10px', background: c.draft_review.score >= 8 ? '#d1fae5' : '#fee2e2', padding: '15px', borderRadius: '4px', border: `1px solid ${c.draft_review.score >= 8 ? '#10b981' : '#ef4444'}` }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <strong>AI Review Scorecard</strong>
+                      <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: c.draft_review.score >= 8 ? '#059669' : '#b91c1c' }}>
+                        {c.draft_review.score} / 10
+                      </span>
+                    </div>
+                    <ul style={{ marginTop: '10px', fontSize: '14px', lineHeight: '1.5' }}>
+                      <li><strong>Tone:</strong> {c.draft_review.tone_analysis}</li>
+                      <li><strong>Length:</strong> {c.draft_review.length_analysis}</li>
+                      <li><strong>Alignment:</strong> {c.draft_review.alignment_analysis}</li>
+                    </ul>
+                    <div style={{ marginTop: '10px', fontSize: '14px', fontStyle: 'italic' }}>
+                      <strong>Actionable Feedback:</strong> {c.draft_review.overall_feedback}
+                    </div>
                   </div>
                 )}
                 {c.jd_analysis && (
