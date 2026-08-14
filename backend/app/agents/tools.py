@@ -1,5 +1,5 @@
 import wikipedia
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 
 def search_wikipedia(query: str) -> str:
     """Searches Wikipedia and returns a short summary of the page."""
