@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@clerk/react';
+import { useAuth, useSession } from '@clerk/react';
 
 interface OutreachCampaign {
   _id: string;
@@ -16,6 +16,7 @@ interface OutreachCampaign {
 
 export const OutreachForm = () => {
   const { getToken } = useAuth();
+  const { session } = useSession();
 
   const [campaigns, setCampaigns] = useState<OutreachCampaign[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -167,6 +168,48 @@ export const OutreachForm = () => {
     }
   };
 
+  const handlePushToGmail = async (campaignId: string) => {
+    try {
+      if (!session) {
+        throw new Error("No active session found.");
+      }
+
+      // We attempt to get the Google OAuth token from Clerk
+      // This requires an 'oauth_google' template in the Clerk Dashboard
+      let googleToken;
+      try {
+        googleToken = await session.getToken({ template: 'oauth_google' });
+      } catch (err) {
+        console.error("Clerk Token Error:", err);
+      }
+
+      if (!googleToken) {
+        throw new Error("Could not retrieve Google OAuth token. Please ensure you have added the 'oauth_google' template in your Clerk Dashboard and signed in with Google.");
+      }
+
+      const token = await getToken();
+      const res = await fetch(`http://localhost:8000/api/outreach/${campaignId}/push-to-gmail`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ access_token: googleToken })
+      });
+
+      if (res.ok) {
+        alert("Draft successfully pushed to your Gmail!");
+        await fetchCampaigns();
+      } else {
+        const errorData = await res.json();
+        throw new Error(errorData.detail || "Failed to push to Gmail");
+      }
+    } catch (err: any) {
+      alert(err.message);
+      console.error(err);
+    }
+  };
+
   return (
     <div style={{ marginTop: '2rem', borderTop: '1px solid #ccc', paddingTop: '2rem' }}>
       <h2>Target Job / Outreach Campaign</h2>
@@ -250,6 +293,14 @@ export const OutreachForm = () => {
                       style={{ padding: '5px 10px', cursor: 'pointer', background: '#10b981', color: 'white', border: 'none', borderRadius: '4px' }}
                     >
                       Review Draft
+                    </button>
+                  )}
+                  {c.generated_draft && c.contact_email && (
+                    <button 
+                      onClick={() => handlePushToGmail(c._id)} 
+                      style={{ padding: '5px 10px', cursor: 'pointer', background: '#ea4335', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold' }}
+                    >
+                      Push to Gmail 🚀
                     </button>
                   )}
                 </div>

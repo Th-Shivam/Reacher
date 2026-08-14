@@ -1,11 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List
+from pydantic import BaseModel
 import json
 # pyrefly: ignore [missing-import]
 from bson import ObjectId
 from app.api.dependencies import get_current_user
 from app.schemas.outreach import OutreachCreate, OutreachInDB
 from app.services import outreach as outreach_service
+from app.services.gmail import create_gmail_draft
 from app.db.mongodb import outreach_collection, candidate_profiles_collection
 # pyrefly: ignore [missing-import]
 from app.agents.jd_analyzer import JDAnalyzerAgent
@@ -327,3 +329,55 @@ async def review_outreach_draft(campaign_id: str, user_id: str = Depends(get_cur
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Draft Review Failed: {str(e)}")
+
+class PushToGmailRequest(BaseModel):
+    access_token: str
+
+@router.post("/{campaign_id}/push-to-gmail")
+async def push_to_gmail(
+    campaign_id: str, 
+    request: PushToGmailRequest,
+    user_id: str = Depends(get_current_user)
+):
+    """
+    Pushes the generated draft to the user's Gmail Drafts folder.
+    """
+    try:
+        campaign = await outreach_collection.find_one({"_id": ObjectId(campaign_id), "clerk_id": user_id})
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid Campaign ID")
+        
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+
+    draft = campaign.get("generated_draft")
+    if not draft:
+        raise HTTPException(status_code=400, detail="No draft found to push.")
+
+    contact_email = campaign.get("contact_email")
+    if not contact_email:
+        raise HTTPException(status_code=400, detail="No contact email defined for this campaign.")
+
+    # Simple parsing to extract Subject line if the AI included it (e.g., "Subject: ...")
+    lines = draft.split("\n")
+    subject = "Outreach Email"
+    body_lines = []
+    
+    for line in lines:
+        if line.lower().startswith("subject:"):
+            subject = line[8:].strip()
+        else:
+            body_lines.append(line)
+            
+    body_text = "\n".join(body_lines).strip()
+
+    try:
+        result = create_gmail_draft(
+            access_token=request.access_token,
+            to_email=contact_email,
+            subject=subject,
+            body_text=body_text
+        )
+        return {"status": "success", "draft_id": result.get("id")}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
