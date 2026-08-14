@@ -6,6 +6,11 @@ export default function ProfileForm() {
   
   const [profile, setProfile] = useState({
     name: '',
+    phone: '',
+    email: '',
+    github: '',
+    linkedin: '',
+    x_url: '',
     headline: '',
     skills: '',
     projects: '',
@@ -37,6 +42,11 @@ export default function ProfileForm() {
         const data = await response.json();
         setProfile({
           name: data.name || '',
+          phone: data.phone || '',
+          email: data.email || '',
+          github: data.github || '',
+          linkedin: data.linkedin || '',
+          x_url: data.x_url || '',
           headline: data.headline || '',
           skills: data.skills ? data.skills.join(', ') : '',
           projects: data.projects ? data.projects.join('\n') : '',
@@ -65,6 +75,11 @@ export default function ProfileForm() {
       
       const payload = {
         name: profile.name,
+        phone: profile.phone,
+        email: profile.email,
+        github: profile.github,
+        linkedin: profile.linkedin,
+        x_url: profile.x_url,
         headline: profile.headline,
         // Split by comma for skills, split by newline for the others
         skills: profile.skills.split(',').map(s => s.trim()).filter(Boolean),
@@ -164,6 +179,56 @@ export default function ProfileForm() {
             value={profile.name} 
             onChange={e => setProfile({...profile, name: e.target.value})} 
             required 
+            style={{padding: '0.5rem'}}
+          />
+        </label>
+        
+        <label style={{display: 'flex', flexDirection: 'column'}}>
+          Phone Number:
+          <input 
+            type="text" 
+            value={profile.phone} 
+            onChange={e => setProfile({...profile, phone: e.target.value})} 
+            style={{padding: '0.5rem'}}
+          />
+        </label>
+        
+        <label style={{display: 'flex', flexDirection: 'column'}}>
+          Email:
+          <input 
+            type="email" 
+            value={profile.email} 
+            onChange={e => setProfile({...profile, email: e.target.value})} 
+            style={{padding: '0.5rem'}}
+          />
+        </label>
+
+        <label style={{display: 'flex', flexDirection: 'column'}}>
+          GitHub URL:
+          <input 
+            type="url" 
+            value={profile.github} 
+            onChange={e => setProfile({...profile, github: e.target.value})} 
+            style={{padding: '0.5rem'}}
+          />
+        </label>
+
+        <label style={{display: 'flex', flexDirection: 'column'}}>
+          LinkedIn URL:
+          <input 
+            type="url" 
+            value={profile.linkedin} 
+            onChange={e => setProfile({...profile, linkedin: e.target.value})} 
+            style={{padding: '0.5rem'}}
+          />
+        </label>
+
+        <label style={{display: 'flex', flexDirection: 'column'}}>
+          X (Twitter) URL:
+          <input 
+            type="url" 
+            value={profile.x_url} 
+            onChange={e => setProfile({...profile, x_url: e.target.value})} 
             style={{padding: '0.5rem'}}
           />
         </label>

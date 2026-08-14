@@ -185,11 +185,27 @@ async def generate_outreach_draft(campaign_id: str, user_id: str = Depends(get_c
         agent = OutreachWriterAgent()
     except ValueError as e:
         raise HTTPException(status_code=500, detail=str(e))
+        
+    # Fetch user profile to provide contact info
+    user_profile = await candidate_profiles_collection.find_one({"clerk_id": user_id})
+    profile_data = {}
+    if user_profile:
+        # Exclude internal DB IDs to keep prompt clean
+        profile_data = {
+            "name": user_profile.get("name", ""),
+            "email": user_profile.get("email", ""),
+            "phone": user_profile.get("phone", ""),
+            "github_url": user_profile.get("github", ""),
+            "linkedin_url": user_profile.get("linkedin", ""),
+            "x_url": user_profile.get("x_url", "")
+        }
 
     try:
         draft = agent.write(
             json.dumps(jd_analysis),
-            json.dumps(candidate_analysis)
+            json.dumps(candidate_analysis),
+            profile_data,
+            campaign.get("company_name", "the company")
         )
         
         await outreach_collection.update_one(
