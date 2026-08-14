@@ -11,6 +11,7 @@ from app.db.mongodb import outreach_collection, candidate_profiles_collection
 from app.agents.jd_analyzer import JDAnalyzerAgent
 from app.agents.candidate_analyzer import CandidateAnalyzerAgent
 from app.agents.outreach_writer import OutreachWriterAgent
+from app.agents.research_agent import ResearchAgent
 
 router = APIRouter()
 
@@ -150,6 +151,52 @@ async def analyze_candidate_profile(campaign_id: str, user_id: str = Depends(get
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Candidate Analysis Failed: {str(e)}")
 
+@router.post("/{campaign_id}/research-company")
+async def research_company(campaign_id: str, user_id: str = Depends(get_current_user)):
+    """
+    Researches the company using the ResearchAgent (Tool Use).
+    """
+    try:
+        campaign = await outreach_collection.find_one({"_id": ObjectId(campaign_id), "clerk_id": user_id})
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid Campaign ID")
+        
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+
+    # Optimization: If we already have the research, don't run AI again
+    if campaign.get("company_research"):
+        return {
+            "status": "success",
+            "campaign_id": campaign_id,
+            "research": campaign["company_research"],
+            "cached": True
+        }
+
+    try:
+        agent = ResearchAgent()
+    except ValueError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    try:
+        research_data = agent.research(campaign["company_name"])
+        
+        await outreach_collection.update_one(
+            {"_id": ObjectId(campaign_id)},
+            {"$set": {
+                "company_research": research_data,
+                "status": "company_researched"
+            }}
+        )
+        
+        return {
+            "status": "success",
+            "campaign_id": campaign_id,
+            "research": research_data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Company Research Failed: {str(e)}")
+
 @router.post("/{campaign_id}/generate-draft")
 async def generate_outreach_draft(campaign_id: str, user_id: str = Depends(get_current_user)):
     """
@@ -165,11 +212,12 @@ async def generate_outreach_draft(campaign_id: str, user_id: str = Depends(get_c
 
     jd_analysis = campaign.get("jd_analysis")
     candidate_analysis = campaign.get("candidate_analysis")
+    company_research = campaign.get("company_research")
     
-    if not jd_analysis or not candidate_analysis:
+    if not jd_analysis or not candidate_analysis or not company_research:
         raise HTTPException(
             status_code=400, 
-            detail="Missing analysis data. Please analyze both JD and Candidate first."
+            detail="Missing analysis data. Please analyze JD, Candidate, and Research the Company first."
         )
 
     # Optimization: if draft exists, just return it
@@ -205,7 +253,8 @@ async def generate_outreach_draft(campaign_id: str, user_id: str = Depends(get_c
             json.dumps(jd_analysis),
             json.dumps(candidate_analysis),
             profile_data,
-            campaign.get("company_name", "the company")
+            campaign.get("company_name", "the company"),
+            company_research
         )
         
         await outreach_collection.update_one(

@@ -16,6 +16,7 @@ class OutreachInDB(OutreachBase):
     status: str = Field(default="pending", description="Status of the outreach")
     jd_analysis: Optional[dict] = None
     candidate_analysis: Optional[dict] = None
+    company_research: Optional[str] = None
     generated_draft: Optional[str] = None
     created_at: datetime
     updated_at: datetime

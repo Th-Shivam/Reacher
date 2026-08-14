@@ -9,6 +9,7 @@ interface OutreachCampaign {
   status: string;
   jd_analysis?: any;
   candidate_analysis?: any;
+  company_research?: string;
   generated_draft?: string;
 }
 
@@ -130,6 +131,23 @@ export const OutreachForm = () => {
     }
   };
 
+  const handleResearchCompany = async (campaignId: string) => {
+    try {
+      const token = await getToken();
+      const res = await fetch(`http://localhost:8000/api/outreach/${campaignId}/research-company`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        await fetchCampaigns();
+      } else {
+        throw new Error("Failed to research company");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <div style={{ marginTop: '2rem', borderTop: '1px solid #ccc', paddingTop: '2rem' }}>
       <h2>Target Job / Outreach Campaign</h2>
@@ -197,10 +215,13 @@ export const OutreachForm = () => {
                   <button onClick={() => handleAnalyzeCandidate(c._id)} style={{ padding: '5px 10px', cursor: 'pointer' }}>
                     Analyze Candidate
                   </button>
+                  <button onClick={() => handleResearchCompany(c._id)} style={{ padding: '5px 10px', cursor: 'pointer' }}>
+                    Research Company
+                  </button>
                   <button 
                     onClick={() => handleGenerateDraft(c._id)} 
                     style={{ padding: '5px 10px', cursor: 'pointer', background: '#0070f3', color: 'white', border: 'none', borderRadius: '4px' }}
-                    disabled={!c.jd_analysis || !c.candidate_analysis}
+                    disabled={!c.jd_analysis || !c.candidate_analysis || !c.company_research}
                   >
                     Generate Draft
                   </button>
@@ -221,6 +242,12 @@ export const OutreachForm = () => {
                   <div style={{ marginTop: '10px', background: '#efe', padding: '10px', borderRadius: '4px', fontSize: '12px' }}>
                     <strong>Candidate Analysis:</strong>
                     <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(c.candidate_analysis, null, 2)}</pre>
+                  </div>
+                )}
+                {c.company_research && (
+                  <div style={{ marginTop: '10px', background: '#e6f7ff', padding: '10px', borderRadius: '4px', fontSize: '12px' }}>
+                    <strong>Company Research:</strong>
+                    <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>{c.company_research}</pre>
                   </div>
                 )}
               </li>

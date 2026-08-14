@@ -17,10 +17,11 @@ class Agent:
     - a model (the brain)
     - instructions (the system prompt)
     """
-    def __init__(self, model_name: str, instructions: str):
+    def __init__(self, model_name: str, instructions: str, tools: list = None):
         self.client = get_ai_client()
         self.model_name = model_name
         self.instructions = instructions
+        self.tools = tools
 
     def run(self, prompt: str) -> str:
         """
@@ -33,4 +34,18 @@ class Agent:
                 system_instruction=self.instructions,
             )
         )
+        return response.text
+
+    def run_with_tools(self, prompt: str) -> str:
+        """
+        Executes the agent using a chat session to support automatic function calling.
+        """
+        chat = self.client.chats.create(
+            model=self.model_name,
+            config=genai.types.GenerateContentConfig(
+                system_instruction=self.instructions,
+                tools=self.tools,
+            )
+        )
+        response = chat.send_message(prompt)
         return response.text
