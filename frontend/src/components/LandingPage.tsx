@@ -1,9 +1,21 @@
 import { useState } from 'react';
 import Spline from '@splinetool/react-spline';
-import { SignInButton, SignUpButton } from '@clerk/react';
+import { SignInButton, SignUpButton, useClerk } from '@clerk/react';
 
 export default function LandingPage() {
   const [isLoading, setIsLoading] = useState(true);
+  const { openSignUp, openSignIn } = useClerk();
+
+  const handleSplineMouseDown = (e: any) => {
+    if (!e || !e.target) return;
+    const targetName = (e.target.name || '').toLowerCase();
+    
+    if (targetName.includes('signin') || targetName.includes('login')) {
+      openSignIn();
+    } else if (targetName.includes('button') || targetName.includes('sign') || targetName.includes('start')) {
+      openSignUp();
+    }
+  };
 
   return (
     <div className="landing-container">
@@ -18,6 +30,7 @@ export default function LandingPage() {
         <Spline
           scene="https://prod.spline.design/OATYG0p9C0UaiL2c/scene.splinecode"
           onLoad={() => setIsLoading(false)}
+          onMouseDown={handleSplineMouseDown}
         />
       </div>
 
