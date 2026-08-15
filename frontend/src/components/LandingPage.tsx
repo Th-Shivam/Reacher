@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Spline from '@splinetool/react-spline';
 import { useNavigate } from 'react-router';
 import type { SplineEvent } from '@splinetool/runtime';
@@ -7,8 +7,38 @@ export default function LandingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Intercept any embedded Spline Open-URL window.open calls to prevent 404 external navigation
+  useEffect(() => {
+    const originalOpen = window.open;
+    window.open = function (url?: string | URL, target?: string, features?: string) {
+      const urlStr = String(url || '');
+      if (urlStr.includes('clerk.accounts.dev') || urlStr.includes('sign-in') || urlStr.includes('sign-up')) {
+        if (urlStr.includes('sign-in')) {
+          navigate('/sign-in');
+        } else {
+          navigate('/sign-up');
+        }
+        return null;
+      }
+      return originalOpen.apply(this, [url, target, features] as any);
+    };
+
+    return () => {
+      window.open = originalOpen;
+    };
+  }, [navigate]);
+
   const handleSplineMouseDown = (e: SplineEvent | any) => {
     if (!e || !e.target) return;
+
+    // Prevent Spline internal event propagation if present
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+    if (e.nativeEvent) {
+      if (typeof e.nativeEvent.stopPropagation === 'function') e.nativeEvent.stopPropagation();
+      if (typeof e.nativeEvent.preventDefault === 'function') e.nativeEvent.preventDefault();
+    }
+
     const objectName = e.target.name || '';
     const lowerName = objectName.toLowerCase();
 
@@ -38,6 +68,10 @@ export default function LandingPage() {
     if (splineApp && typeof splineApp.addEventListener === 'function') {
       splineApp.addEventListener('mouseDown', (e: any) => {
         if (!e || !e.target) return;
+
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+
         const objectName = e.target.name || '';
         const lowerName = objectName.toLowerCase();
 
