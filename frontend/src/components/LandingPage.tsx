@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Spline from '@splinetool/react-spline';
 import { useNavigate } from 'react-router';
 import type { SplineEvent } from '@splinetool/runtime';
+import FloatingDockDemo from '@/components/ui/floating-dock-demo';
 
 export default function LandingPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -112,19 +113,15 @@ export default function LandingPage() {
         />
       </div>
 
-      {/* Top Navbar */}
-      <header className="landing-navbar">
-        <div className="brand-logo">
+      {/* Floating Dock Navbar */}
+      <header className="fixed top-6 left-0 right-0 z-50 flex items-center justify-between px-8 max-w-7xl mx-auto pointer-events-none">
+        <div className="brand-logo pointer-events-auto bg-neutral-900/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-neutral-800/80 shadow-2xl">
           <span className="logo-icon">✨</span>
           <span className="logo-text">REACHER</span>
         </div>
-        <div className="nav-actions">
-          <button className="btn btn-secondary" onClick={() => navigate('/sign-in')}>
-            Sign In
-          </button>
-          <button className="btn btn-primary" onClick={() => navigate('/sign-up')}>
-            Get Started
-          </button>
+
+        <div className="pointer-events-auto">
+          <FloatingDockDemo />
         </div>
       </header>
 
