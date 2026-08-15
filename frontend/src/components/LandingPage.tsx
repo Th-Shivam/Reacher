@@ -7,7 +7,7 @@ export default function LandingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Intercept any embedded Spline Open-URL window.open calls to prevent 404 external navigation
+  // Intercept embedded Spline Open-URL window.open calls to prevent external 404 redirects
   useEffect(() => {
     const originalOpen = window.open;
     window.open = function (url?: string | URL, target?: string, features?: string) {
@@ -28,10 +28,46 @@ export default function LandingPage() {
     };
   }, [navigate]);
 
+  const processSplineClick = (objectName: string) => {
+    const name = (objectName || '').trim();
+    const lowerName = name.toLowerCase();
+
+    // Map Sign In targets
+    if (
+      name === 'SignInButton' ||
+      name === 'StartSignIn' ||
+      name === 'Description' ||
+      name === 'word' ||
+      lowerName.includes('signin') ||
+      lowerName.includes('login')
+    ) {
+      navigate('/sign-in');
+      return true;
+    }
+
+    // Map Sign Up targets
+    if (
+      name === 'SignUpButton' ||
+      name === 'StartSignUp' ||
+      name === 'GetStartedButton' ||
+      name === 'TextR' ||
+      name === 'RectangleR' ||
+      lowerName.includes('signup') ||
+      lowerName.includes('getstarted') ||
+      (lowerName.includes('button') && !lowerName.includes('signin')) ||
+      lowerName.includes('start')
+    ) {
+      navigate('/sign-up');
+      return true;
+    }
+
+    // Unrelated objects (e.g. robot, canvas) do nothing
+    return false;
+  };
+
   const handleSplineMouseDown = (e: SplineEvent | any) => {
     if (!e || !e.target) return;
 
-    // Prevent Spline internal event propagation if present
     if (typeof e.stopPropagation === 'function') e.stopPropagation();
     if (typeof e.preventDefault === 'function') e.preventDefault();
     if (e.nativeEvent) {
@@ -40,27 +76,7 @@ export default function LandingPage() {
     }
 
     const objectName = e.target.name || '';
-    const lowerName = objectName.toLowerCase();
-
-    console.log('Spline object clicked:', objectName);
-
-    if (objectName === 'SignInButton' || lowerName.includes('signin') || lowerName.includes('login')) {
-      navigate('/sign-in');
-      return;
-    }
-
-    if (
-      objectName === 'GetStartedButton' ||
-      lowerName.includes('getstarted') ||
-      lowerName.includes('button') ||
-      lowerName.includes('start') ||
-      lowerName.includes('textr') ||
-      lowerName.includes('rectangler') ||
-      lowerName.includes('part2')
-    ) {
-      navigate('/sign-up');
-      return;
-    }
+    processSplineClick(objectName);
   };
 
   const handleSplineLoad = (splineApp: any) => {
@@ -73,27 +89,7 @@ export default function LandingPage() {
         if (typeof e.preventDefault === 'function') e.preventDefault();
 
         const objectName = e.target.name || '';
-        const lowerName = objectName.toLowerCase();
-
-        console.log('Spline event listener clicked:', objectName);
-
-        if (objectName === 'SignInButton' || lowerName.includes('signin') || lowerName.includes('login')) {
-          navigate('/sign-in');
-          return;
-        }
-
-        if (
-          objectName === 'GetStartedButton' ||
-          lowerName.includes('getstarted') ||
-          lowerName.includes('button') ||
-          lowerName.includes('start') ||
-          lowerName.includes('textr') ||
-          lowerName.includes('rectangler') ||
-          lowerName.includes('part2')
-        ) {
-          navigate('/sign-up');
-          return;
-        }
+        processSplineClick(objectName);
       });
     }
   };
