@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Spline from '@splinetool/react-spline';
 import { SignInButton, SignUpButton } from '@clerk/react';
 

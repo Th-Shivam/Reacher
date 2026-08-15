@@ -1,53 +1,57 @@
 import './App.css'
 import {
   Show,
-  SignInButton,
-  SignUpButton,
   UserButton,
   useAuth,
 } from '@clerk/react'
+import { useEffect } from 'react'
 import ProfileForm from './components/ProfileForm'
 import { OutreachForm } from './components/OutreachForm'
+import LandingPage from './components/LandingPage'
+
 function App() {
-  const { getToken } = useAuth()
+  const { isSignedIn, isLoaded, getToken } = useAuth()
 
-  const testBackend = async () => {
-    try {
-      const token = await getToken()
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return
 
-      const response = await fetch('http://localhost:8000/api/me', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+    const syncUser = async () => {
+      try {
+        const token = await getToken()
+        if (!token) return
 
-      const data = await response.json()
-
-      console.log('Backend response:', data)
-    } catch (error) {
-      console.error('Backend error:', error)
+        await fetch('http://localhost:8000/api/me', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+      } catch (error) {
+        console.error('User sync error:', error)
+      }
     }
-  }
+
+    syncUser()
+  }, [isSignedIn, isLoaded, getToken])
 
   return (
     <>
-      <header>
-        <Show when="signed-out">
-          <SignInButton />
-          <SignUpButton />
-        </Show>
+      <Show when="signed-out">
+        <LandingPage />
+      </Show>
 
-        <Show when="signed-in">
+      <Show when="signed-in">
+        <header style={{ padding: '1rem 2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', background: '#0b0f19' }}>
+          <div className="brand-logo" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '1.25rem' }}>
+            <span>✨</span>
+            <span className="logo-text">REACHER</span>
+          </div>
           <UserButton />
-
-          <button onClick={testBackend}>
-            Test Backend
-          </button>
-          
+        </header>
+        <main style={{ padding: '2rem' }}>
           <ProfileForm />
           <OutreachForm />
-        </Show>
-      </header>
+        </main>
+      </Show>
     </>
   )
 }
