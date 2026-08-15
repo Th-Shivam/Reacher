@@ -9,11 +9,37 @@ export default function LandingPage() {
   const handleSplineMouseDown = (e: any) => {
     if (!e || !e.target) return;
     const targetName = (e.target.name || '').toLowerCase();
+    console.log('Spline 3D Object Clicked:', targetName, e.target);
     
     if (targetName.includes('signin') || targetName.includes('login')) {
       openSignIn();
-    } else if (targetName.includes('button') || targetName.includes('sign') || targetName.includes('start')) {
+    } else if (
+      targetName.includes('button') ||
+      targetName.includes('start') ||
+      targetName.includes('textr') ||
+      targetName.includes('rectangler') ||
+      targetName.includes('part2')
+    ) {
       openSignUp();
+    }
+  };
+
+  const handleSplineLoad = (splineApp: any) => {
+    setIsLoading(false);
+    if (splineApp && typeof splineApp.addEventListener === 'function') {
+      splineApp.addEventListener('mouseDown', (e: any) => {
+        if (!e || !e.target) return;
+        const targetName = (e.target.name || '').toLowerCase();
+        if (
+          targetName.includes('button') ||
+          targetName.includes('start') ||
+          targetName.includes('textr') ||
+          targetName.includes('rectangler') ||
+          targetName.includes('part2')
+        ) {
+          openSignUp();
+        }
+      });
     }
   };
 
@@ -29,7 +55,7 @@ export default function LandingPage() {
         )}
         <Spline
           scene="https://prod.spline.design/OATYG0p9C0UaiL2c/scene.splinecode"
-          onLoad={() => setIsLoading(false)}
+          onLoad={handleSplineLoad}
           onMouseDown={handleSplineMouseDown}
         />
       </div>
