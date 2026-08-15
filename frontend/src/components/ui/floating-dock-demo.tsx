@@ -1,4 +1,4 @@
-import { FloatingDock } from "@/components/ui/floating-dock";
+import { FloatingDock, type DockItem } from "@/components/ui/floating-dock";
 import {
   IconBrandGithub,
   IconBrandX,
@@ -7,63 +7,51 @@ import {
   IconUserPlus,
   IconSparkles,
 } from "@tabler/icons-react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 
 export default function FloatingDockDemo() {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const links = [
+  const links: DockItem[] = [
     {
       title: "Home",
-      icon: (
-        <IconHome className="h-full w-full text-neutral-500 dark:text-neutral-300" />
-      ),
-      href: "/",
+      icon: <IconHome size={20} strokeWidth={1.75} />,
+      onClick: () => navigate("/"),
+      isActive: location.pathname === "/",
     },
     {
-      title: "Features",
-      icon: (
-        <IconSparkles className="h-full w-full text-neutral-500 dark:text-neutral-300" />
-      ),
+      title: "AI Features",
+      icon: <IconSparkles size={20} strokeWidth={1.75} />,
       href: "#features",
     },
     {
       title: "Sign In",
-      icon: (
-        <IconLogin className="h-full w-full text-indigo-400 dark:text-indigo-400" />
-      ),
+      icon: <IconLogin size={20} strokeWidth={1.75} />,
       onClick: () => navigate("/sign-in"),
+      isActive: location.pathname.startsWith("/sign-in"),
     },
     {
       title: "Get Started",
-      icon: (
-        <IconUserPlus className="h-full w-full text-purple-400 dark:text-purple-400" />
-      ),
+      icon: <IconUserPlus size={20} strokeWidth={1.75} />,
       onClick: () => navigate("/sign-up"),
+      isActive: location.pathname.startsWith("/sign-up"),
     },
     {
-      title: "Twitter",
-      icon: (
-        <IconBrandX className="h-full w-full text-neutral-500 dark:text-neutral-300" />
-      ),
+      title: "X / Twitter",
+      icon: <IconBrandX size={20} strokeWidth={1.75} />,
       href: "https://x.com",
     },
     {
       title: "GitHub",
-      icon: (
-        <IconBrandGithub className="h-full w-full text-neutral-500 dark:text-neutral-300" />
-      ),
+      icon: <IconBrandGithub size={20} strokeWidth={1.75} />,
       href: "https://github.com",
     },
   ];
 
   return (
-    <div className="flex items-center justify-center w-full">
-      <FloatingDock
-        desktopClassName="border border-white/10 shadow-2xl bg-neutral-900/90"
-        mobileClassName="translate-y-0"
-        items={links}
-      />
+    <div className="flex items-center justify-center">
+      <FloatingDock items={links} />
     </div>
   );
 }
