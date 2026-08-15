@@ -141,15 +141,15 @@ export default function LandingPage() {
         />
       </div>
 
-      {/* Top-Left Brand Logo (Image Asset) */}
+      {/* Top-Left Brand Logo (Image Asset - 3x Enlarged) */}
       <div
         onClick={() => handleSceneTransition('scene1')}
-        className="fixed top-6 left-8 z-50 pointer-events-auto cursor-pointer select-none group"
+        className="fixed top-4 left-6 z-50 pointer-events-auto cursor-pointer select-none group"
       >
         <img
           src="/logo.png"
           alt="REACHER"
-          className="h-8 md:h-10 w-auto max-w-[150px] md:max-w-[170px] object-contain transition-opacity duration-200 hover:opacity-90"
+          className="h-20 md:h-28 w-auto max-w-[320px] md:max-w-[450px] object-contain transition-opacity duration-200 hover:opacity-90"
         />
       </div>
 
