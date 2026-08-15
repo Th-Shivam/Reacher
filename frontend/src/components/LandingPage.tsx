@@ -141,15 +141,16 @@ export default function LandingPage() {
         />
       </div>
 
-      {/* Top-Left Brand Logo (Clean Standalone Wordmark) */}
+      {/* Top-Left Brand Logo (Image Asset) */}
       <div
         onClick={() => handleSceneTransition('scene1')}
-        className="fixed top-7 left-8 z-50 pointer-events-auto cursor-pointer select-none group"
+        className="fixed top-6 left-8 z-50 pointer-events-auto cursor-pointer select-none group"
       >
-        <div className="brand-logo">
-          <span className="logo-icon group-hover:rotate-12 transition-transform duration-300">✨</span>
-          <span className="logo-text">REACHER</span>
-        </div>
+        <img
+          src="/logo.png"
+          alt="REACHER"
+          className="h-8 md:h-10 w-auto max-w-[150px] md:max-w-[170px] object-contain transition-opacity duration-200 hover:opacity-90"
+        />
       </div>
 
       {/* Floating Dock Navbar at Bottom Center */}
