@@ -113,7 +113,7 @@ const FloatingDockDesktop = ({
       onMouseMove={(e) => mouseX.set(e.pageX)}
       onMouseLeave={() => mouseX.set(Infinity)}
       className={cn(
-        "mx-auto hidden h-16 items-end gap-4 rounded-2xl bg-gray-50 px-4 pb-3 md:flex dark:bg-neutral-900/90 backdrop-blur-md border border-neutral-800/80 shadow-2xl",
+        "mx-auto hidden h-16 items-center justify-center gap-4 rounded-2xl bg-gray-50 px-4 md:flex dark:bg-neutral-900/90 backdrop-blur-md border border-neutral-800/80 shadow-2xl",
         className
       )}
     >
@@ -192,7 +192,7 @@ function IconContainer({
             initial={{ opacity: 0, y: 10, x: "-50%" }}
             animate={{ opacity: 1, y: 0, x: "-50%" }}
             exit={{ opacity: 0, y: 2, x: "-50%" }}
-            className="absolute -top-8 left-1/2 w-fit rounded-md border border-gray-200 bg-gray-100 px-2 py-0.5 text-xs whitespace-pre text-neutral-700 dark:border-neutral-900 dark:bg-neutral-800 dark:text-white shadow-md pointer-events-none"
+            className="absolute -top-10 left-1/2 w-fit rounded-md border border-gray-200 bg-gray-100 px-2 py-0.5 text-xs whitespace-pre text-neutral-700 dark:border-neutral-900 dark:bg-neutral-800 dark:text-white shadow-md pointer-events-none"
           >
             {title}
           </motion.div>
@@ -209,11 +209,15 @@ function IconContainer({
 
   if (onClick) {
     return (
-      <button onClick={onClick} className="bg-transparent border-0 p-0 m-0 cursor-pointer outline-none">
+      <button onClick={onClick} className="bg-transparent border-0 p-0 m-0 cursor-pointer outline-none flex items-center justify-center">
         {innerContent}
       </button>
     );
   }
 
-  return <a href={href || "#"}>{innerContent}</a>;
+  return (
+    <a href={href || "#"} className="flex items-center justify-center outline-none">
+      {innerContent}
+    </a>
+  );
 }
