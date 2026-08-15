@@ -125,7 +125,7 @@ const FloatingDockDesktop = ({
       onMouseMove={(e) => mouseX.set(e.pageX)}
       onMouseLeave={() => mouseX.set(Infinity)}
       className={cn(
-        "hidden md:flex h-[58px] items-center justify-center gap-2 rounded-2xl bg-neutral-950/85 backdrop-blur-xl px-3.5 border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.6)] ring-1 ring-white/5",
+        "hidden md:flex h-16 items-end justify-center gap-3 rounded-2xl bg-neutral-950/85 backdrop-blur-xl px-4 pb-3 border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.6)] ring-1 ring-white/5",
         className
       )}
     >
@@ -159,39 +159,54 @@ function IconContainer({
     return val - bounds.x - bounds.width / 2;
   });
 
-  // Subtle magnification (42px -> 50px)
-  const sizeTransform = useTransform(distance, [-120, 0, 120], [42, 50, 42]);
-  const iconScaleTransform = useTransform(distance, [-120, 0, 120], [1, 1.08, 1]);
+  // Smooth magnification spring (42px resting -> 72px max hover)
+  const widthTransform = useTransform(distance, [-150, 0, 150], [42, 72, 42]);
+  const heightTransform = useTransform(distance, [-150, 0, 150], [42, 72, 42]);
 
-  const size = useSpring(sizeTransform, {
+  const widthTransformIcon = useTransform(distance, [-150, 0, 150], [20, 34, 20]);
+  const heightTransformIcon = useTransform(distance, [-150, 0, 150], [20, 34, 20]);
+
+  const width = useSpring(widthTransform, {
     mass: 0.1,
-    stiffness: 220,
-    damping: 18,
+    stiffness: 170,
+    damping: 14,
   });
 
-  const iconScale = useSpring(iconScaleTransform, {
+  const height = useSpring(heightTransform, {
     mass: 0.1,
-    stiffness: 220,
-    damping: 18,
+    stiffness: 170,
+    damping: 14,
+  });
+
+  const widthIcon = useSpring(widthTransformIcon, {
+    mass: 0.1,
+    stiffness: 170,
+    damping: 14,
+  });
+
+  const heightIcon = useSpring(heightTransformIcon, {
+    mass: 0.1,
+    stiffness: 170,
+    damping: 14,
   });
 
   const content = (
     <motion.div
       ref={ref}
-      style={{ width: size, height: size }}
+      style={{ width, height }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className={cn(
-        "relative flex items-center justify-center rounded-xl transition-colors duration-150 cursor-pointer select-none",
+        "relative flex aspect-square items-center justify-center rounded-xl transition-colors duration-150 cursor-pointer select-none",
         isActive
-          ? "bg-white/15 text-white border border-white/20 shadow-[0_0_12px_rgba(255,255,255,0.15)]"
+          ? "bg-white/15 text-white border border-white/20 shadow-[0_0_14px_rgba(255,255,255,0.18)]"
           : "bg-white/5 text-neutral-400 hover:text-white hover:bg-white/12 border border-white/5 hover:border-white/15"
       )}
     >
       <AnimatePresence>
         {hovered && (
           <motion.div
-            initial={{ opacity: 0, y: 6, x: "-50%" }}
+            initial={{ opacity: 0, y: 10, x: "-50%" }}
             animate={{ opacity: 1, y: 0, x: "-50%" }}
             exit={{ opacity: 0, y: 3, x: "-50%" }}
             transition={{ duration: 0.15 }}
@@ -203,8 +218,8 @@ function IconContainer({
       </AnimatePresence>
 
       <motion.div
-        style={{ scale: iconScale }}
-        className="flex items-center justify-center w-5 h-5 text-current"
+        style={{ width: widthIcon, height: heightIcon }}
+        className="flex items-center justify-center text-current"
       >
         {icon}
       </motion.div>
