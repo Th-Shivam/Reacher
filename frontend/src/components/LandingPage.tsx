@@ -126,7 +126,7 @@ export default function LandingPage() {
   return (
     <div className="landing-container">
       {/* Background 3D Spline Canvas */}
-      <div className="spline-wrapper spline-canvas-shifted">
+      <div className="spline-wrapper">
         {isLoading && (
           <div className="spline-loader">
             <div className="spinner"></div>
@@ -160,7 +160,7 @@ export default function LandingPage() {
         />
       </div>
 
-      {/* Hero Content Overlay (Centered Composition) */}
+      {/* Ultra-Clean Minimal Hero Content Overlay */}
       <div className="hero-overlay-centered">
         <AnimatePresence mode="wait">
           {activeScene === 'scene1' ? (
@@ -180,22 +180,8 @@ export default function LandingPage() {
               </h1>
 
               <p className="hero-subtitle-centered">
-                Reacher researches the company, understands the opportunity, and helps you prepare personalized outreach worth sending.
+                Turn cold outreach into well-researched conversations.
               </p>
-
-              <div className="hero-cta-centered">
-                <button
-                  className="btn btn-large btn-primary shadow-indigo-500/25"
-                  onClick={() => handleSceneTransition('scene2')}
-                >
-                  Start reaching ↗
-                </button>
-              </div>
-
-              <div className="trust-indicator">
-                <span className="trust-dot"></span>
-                <span>Human review · No automatic sending</span>
-              </div>
             </motion.div>
           ) : (
             <motion.div
