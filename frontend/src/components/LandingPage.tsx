@@ -1,11 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Spline from '@splinetool/react-spline';
 import { useNavigate } from 'react-router';
 import type { SplineEvent } from '@splinetool/runtime';
+import { motion, AnimatePresence } from 'motion/react';
 import FloatingDockDemo from '@/components/ui/floating-dock-demo';
+
+export type HeroScene = 'scene1' | 'scene2';
 
 export default function LandingPage() {
   const [isLoading, setIsLoading] = useState(true);
+  const [activeScene, setActiveScene] = useState<HeroScene>('scene1');
+  const splineRef = useRef<any>(null);
   const navigate = useNavigate();
 
   // Intercept embedded Spline Open-URL window.open calls to prevent external 404 redirects
@@ -29,11 +34,33 @@ export default function LandingPage() {
     };
   }, [navigate]);
 
+  const handleSceneTransition = (targetScene: HeroScene) => {
+    setActiveScene(targetScene);
+    if (splineRef.current) {
+      try {
+        if (targetScene === 'scene2') {
+          splineRef.current.emitEvent?.('mouseDown', 'SignInButton');
+          splineRef.current.emitEvent?.('mouseDown', 'StartSignIn');
+        } else {
+          splineRef.current.emitEvent?.('mouseDown', 'Home');
+        }
+      } catch (e) {
+        // Fallback for custom spline runtime events
+      }
+    }
+  };
+
   const processSplineClick = (objectName: string) => {
     const name = (objectName || '').trim();
     const lowerName = name.toLowerCase();
 
-    // Map Sign In targets
+    if (activeScene === 'scene1') {
+      // Any interaction in scene1 transitions to scene2
+      setActiveScene('scene2');
+      return true;
+    }
+
+    // Map Sign In targets in Scene 2
     if (
       name === 'SignInButton' ||
       name === 'StartSignIn' ||
@@ -46,7 +73,7 @@ export default function LandingPage() {
       return true;
     }
 
-    // Map Sign Up targets
+    // Map Sign Up targets in Scene 2
     if (
       name === 'SignUpButton' ||
       name === 'StartSignUp' ||
@@ -62,7 +89,6 @@ export default function LandingPage() {
       return true;
     }
 
-    // Unrelated objects (e.g. robot, canvas) do nothing
     return false;
   };
 
@@ -82,6 +108,8 @@ export default function LandingPage() {
 
   const handleSplineLoad = (splineApp: any) => {
     setIsLoading(false);
+    splineRef.current = splineApp;
+
     if (splineApp && typeof splineApp.addEventListener === 'function') {
       splineApp.addEventListener('mouseDown', (e: any) => {
         if (!e || !e.target) return;
@@ -102,7 +130,7 @@ export default function LandingPage() {
         {isLoading && (
           <div className="spline-loader">
             <div className="spinner"></div>
-            <p>Loading 3D Experience...</p>
+            <p className="text-sm font-medium text-neutral-400">Loading 3D Experience...</p>
           </div>
         )}
         <Spline
@@ -114,7 +142,10 @@ export default function LandingPage() {
       </div>
 
       {/* Top-Left Brand Logo */}
-      <div className="fixed top-6 left-8 z-50 pointer-events-auto bg-neutral-900/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-neutral-800/80 shadow-2xl">
+      <div
+        onClick={() => handleSceneTransition('scene1')}
+        className="fixed top-6 left-8 z-50 pointer-events-auto bg-neutral-900/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-neutral-800/80 shadow-2xl cursor-pointer hover:border-neutral-700 transition-colors"
+      >
         <div className="brand-logo">
           <span className="logo-icon">✨</span>
           <span className="logo-text">REACHER</span>
@@ -123,26 +154,94 @@ export default function LandingPage() {
 
       {/* Floating Dock Navbar at Bottom Center */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-auto">
-        <FloatingDockDemo />
+        <FloatingDockDemo
+          activeScene={activeScene}
+          onSelectScene={(scene) => handleSceneTransition(scene)}
+        />
       </div>
 
-      {/* Hero Content Overlay */}
-      <div className="hero-overlay">
-        <div className="hero-content">
-          <span className="badge">AI-POWERED RECRUITMENT & OUTREACH</span>
-          <h1 className="hero-title">
-            Intelligent Candidate Outreach <br />
-            <span className="gradient-text">Engineered for Results</span>
-          </h1>
-          <p className="hero-subtitle">
-            Analyze candidates, automate personalized Gmail outreach, and streamline recruitment workflows in seconds.
-          </p>
-          <div className="hero-cta">
-            <button className="btn btn-large btn-primary" onClick={() => navigate('/sign-up')}>
-              Start Free Trial →
-            </button>
-          </div>
-        </div>
+      {/* Hero Content Overlay (Centered Composition) */}
+      <div className="hero-overlay-centered">
+        <AnimatePresence mode="wait">
+          {activeScene === 'scene1' ? (
+            <motion.div
+              key="scene1"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+              className="hero-content-centered"
+            >
+              <span className="badge">AI OUTREACH INTELLIGENCE</span>
+
+              <h1 className="hero-title-centered">
+                Research before <br />
+                <span className="font-light text-neutral-300 opacity-90">you reach.</span>
+              </h1>
+
+              <p className="hero-subtitle-centered">
+                Reacher researches the company, understands the opportunity, and helps you prepare personalized outreach worth sending.
+              </p>
+
+              <div className="hero-cta-centered">
+                <button
+                  className="btn btn-large btn-primary shadow-indigo-500/25"
+                  onClick={() => handleSceneTransition('scene2')}
+                >
+                  Start reaching ↗
+                </button>
+              </div>
+
+              <div className="trust-indicator">
+                <span className="trust-dot"></span>
+                <span>Human review · No automatic sending</span>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="scene2"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+              className="hero-content-centered"
+            >
+              <span className="badge badge-accent">READY TO REACH OUT?</span>
+
+              <h1 className="hero-title-centered">
+                Turn research into <br />
+                <span className="gradient-text">your next conversation.</span>
+              </h1>
+
+              <p className="hero-subtitle-centered">
+                Your research is ready. Create a personalized outreach draft and stay in control of what gets sent.
+              </p>
+
+              <div className="hero-cta-row">
+                <button
+                  className="btn btn-large btn-secondary"
+                  onClick={() => navigate('/sign-in')}
+                >
+                  Sign in
+                </button>
+
+                <button
+                  className="btn btn-large btn-primary"
+                  onClick={() => navigate('/sign-up')}
+                >
+                  Get started ↗
+                </button>
+              </div>
+
+              <button
+                className="back-scene-link"
+                onClick={() => handleSceneTransition('scene1')}
+              >
+                ← Back to research
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

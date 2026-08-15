@@ -9,23 +9,44 @@ import {
 } from "@tabler/icons-react";
 import { useNavigate } from "react-router";
 
-export default function FloatingDockDemo() {
+interface FloatingDockDemoProps {
+  activeScene?: "scene1" | "scene2";
+  onSelectScene?: (scene: "scene1" | "scene2") => void;
+}
+
+export default function FloatingDockDemo({
+  activeScene = "scene1",
+  onSelectScene,
+}: FloatingDockDemoProps) {
   const navigate = useNavigate();
 
   const links: DockItem[] = [
     {
-      title: "Home",
+      title: "Home (Scene 1)",
       icon: (
-        <IconHome className="h-full w-full text-neutral-500 dark:text-neutral-300" />
+        <IconHome
+          className={`h-full w-full ${
+            activeScene === "scene1" ? "text-indigo-400" : "text-neutral-500 dark:text-neutral-300"
+          }`}
+        />
       ),
-      onClick: () => navigate("/"),
+      onClick: () => {
+        if (onSelectScene) onSelectScene("scene1");
+        navigate("/");
+      },
     },
     {
-      title: "Features",
+      title: "Explore (Scene 2)",
       icon: (
-        <IconSparkles className="h-full w-full text-neutral-500 dark:text-neutral-300" />
+        <IconSparkles
+          className={`h-full w-full ${
+            activeScene === "scene2" ? "text-indigo-400" : "text-neutral-500 dark:text-neutral-300"
+          }`}
+        />
       ),
-      href: "#features",
+      onClick: () => {
+        if (onSelectScene) onSelectScene("scene2");
+      },
     },
     {
       title: "Sign In",
