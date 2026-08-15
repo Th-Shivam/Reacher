@@ -113,17 +113,18 @@ export default function LandingPage() {
         />
       </div>
 
-      {/* Floating Dock Navbar */}
-      <header className="fixed top-6 left-0 right-0 z-50 flex items-center justify-between px-8 max-w-7xl mx-auto pointer-events-none">
-        <div className="brand-logo pointer-events-auto bg-neutral-900/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-neutral-800/80 shadow-2xl">
+      {/* Top-Left Brand Logo */}
+      <div className="fixed top-6 left-8 z-50 pointer-events-auto bg-neutral-900/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-neutral-800/80 shadow-2xl">
+        <div className="brand-logo">
           <span className="logo-icon">✨</span>
           <span className="logo-text">REACHER</span>
         </div>
+      </div>
 
-        <div className="pointer-events-auto">
-          <FloatingDockDemo />
-        </div>
-      </header>
+      {/* Floating Dock Navbar at Bottom Center */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-auto">
+        <FloatingDockDemo />
+      </div>
 
       {/* Hero Content Overlay */}
       <div className="hero-overlay">
