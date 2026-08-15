@@ -126,7 +126,7 @@ export default function LandingPage() {
   return (
     <div className="landing-container">
       {/* Background 3D Spline Canvas */}
-      <div className="spline-wrapper">
+      <div className="spline-wrapper spline-canvas-shifted">
         {isLoading && (
           <div className="spline-loader">
             <div className="spinner"></div>
@@ -141,13 +141,13 @@ export default function LandingPage() {
         />
       </div>
 
-      {/* Top-Left Brand Logo */}
+      {/* Top-Left Brand Logo (Clean Standalone Wordmark) */}
       <div
         onClick={() => handleSceneTransition('scene1')}
-        className="fixed top-6 left-8 z-50 pointer-events-auto bg-neutral-900/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-neutral-800/80 shadow-2xl cursor-pointer hover:border-neutral-700 transition-colors"
+        className="fixed top-7 left-8 z-50 pointer-events-auto cursor-pointer select-none group"
       >
         <div className="brand-logo">
-          <span className="logo-icon">✨</span>
+          <span className="logo-icon group-hover:rotate-12 transition-transform duration-300">✨</span>
           <span className="logo-text">REACHER</span>
         </div>
       </div>
