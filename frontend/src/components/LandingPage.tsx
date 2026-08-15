@@ -1,26 +1,35 @@
 import { useState } from 'react';
 import Spline from '@splinetool/react-spline';
-import { SignInButton, SignUpButton, useClerk } from '@clerk/react';
+import { useNavigate } from 'react-router';
+import type { SplineEvent } from '@splinetool/runtime';
 
 export default function LandingPage() {
   const [isLoading, setIsLoading] = useState(true);
-  const { openSignUp, openSignIn } = useClerk();
+  const navigate = useNavigate();
 
-  const handleSplineMouseDown = (e: any) => {
+  const handleSplineMouseDown = (e: SplineEvent | any) => {
     if (!e || !e.target) return;
-    const targetName = (e.target.name || '').toLowerCase();
-    console.log('Spline 3D Object Clicked:', targetName, e.target);
-    
-    if (targetName.includes('signin') || targetName.includes('login')) {
-      openSignIn();
-    } else if (
-      targetName.includes('button') ||
-      targetName.includes('start') ||
-      targetName.includes('textr') ||
-      targetName.includes('rectangler') ||
-      targetName.includes('part2')
+    const objectName = e.target.name || '';
+    const lowerName = objectName.toLowerCase();
+
+    console.log('Spline object clicked:', objectName);
+
+    if (objectName === 'SignInButton' || lowerName.includes('signin') || lowerName.includes('login')) {
+      navigate('/sign-in');
+      return;
+    }
+
+    if (
+      objectName === 'GetStartedButton' ||
+      lowerName.includes('getstarted') ||
+      lowerName.includes('button') ||
+      lowerName.includes('start') ||
+      lowerName.includes('textr') ||
+      lowerName.includes('rectangler') ||
+      lowerName.includes('part2')
     ) {
-      openSignUp();
+      navigate('/sign-up');
+      return;
     }
   };
 
@@ -29,15 +38,27 @@ export default function LandingPage() {
     if (splineApp && typeof splineApp.addEventListener === 'function') {
       splineApp.addEventListener('mouseDown', (e: any) => {
         if (!e || !e.target) return;
-        const targetName = (e.target.name || '').toLowerCase();
+        const objectName = e.target.name || '';
+        const lowerName = objectName.toLowerCase();
+
+        console.log('Spline event listener clicked:', objectName);
+
+        if (objectName === 'SignInButton' || lowerName.includes('signin') || lowerName.includes('login')) {
+          navigate('/sign-in');
+          return;
+        }
+
         if (
-          targetName.includes('button') ||
-          targetName.includes('start') ||
-          targetName.includes('textr') ||
-          targetName.includes('rectangler') ||
-          targetName.includes('part2')
+          objectName === 'GetStartedButton' ||
+          lowerName.includes('getstarted') ||
+          lowerName.includes('button') ||
+          lowerName.includes('start') ||
+          lowerName.includes('textr') ||
+          lowerName.includes('rectangler') ||
+          lowerName.includes('part2')
         ) {
-          openSignUp();
+          navigate('/sign-up');
+          return;
         }
       });
     }
@@ -56,6 +77,7 @@ export default function LandingPage() {
         <Spline
           scene="https://prod.spline.design/OATYG0p9C0UaiL2c/scene.splinecode"
           onLoad={handleSplineLoad}
+          onSplineMouseDown={handleSplineMouseDown}
           onMouseDown={handleSplineMouseDown}
         />
       </div>
@@ -67,12 +89,12 @@ export default function LandingPage() {
           <span className="logo-text">REACHER</span>
         </div>
         <div className="nav-actions">
-          <SignInButton mode="modal">
-            <button className="btn btn-secondary">Sign In</button>
-          </SignInButton>
-          <SignUpButton mode="modal">
-            <button className="btn btn-primary">Get Started</button>
-          </SignUpButton>
+          <button className="btn btn-secondary" onClick={() => navigate('/sign-in')}>
+            Sign In
+          </button>
+          <button className="btn btn-primary" onClick={() => navigate('/sign-up')}>
+            Get Started
+          </button>
         </div>
       </header>
 
@@ -88,9 +110,9 @@ export default function LandingPage() {
             Analyze candidates, automate personalized Gmail outreach, and streamline recruitment workflows in seconds.
           </p>
           <div className="hero-cta">
-            <SignUpButton mode="modal">
-              <button className="btn btn-large btn-primary">Start Free Trial →</button>
-            </SignUpButton>
+            <button className="btn btn-large btn-primary" onClick={() => navigate('/sign-up')}>
+              Start Free Trial →
+            </button>
           </div>
         </div>
       </div>

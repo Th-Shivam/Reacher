@@ -5,9 +5,12 @@ import {
   useAuth,
 } from '@clerk/react'
 import { useEffect } from 'react'
+import { Routes, Route } from 'react-router'
 import ProfileForm from './components/ProfileForm'
 import { OutreachForm } from './components/OutreachForm'
 import LandingPage from './components/LandingPage'
+import SignInPage from './components/SignInPage'
+import SignUpPage from './components/SignUpPage'
 
 function App() {
   const { isSignedIn, isLoaded, getToken } = useAuth()
@@ -34,25 +37,40 @@ function App() {
   }, [isSignedIn, isLoaded, getToken])
 
   return (
-    <>
-      <Show when="signed-out">
-        <LandingPage />
-      </Show>
+    <Routes>
+      <Route
+        path="/sign-in/*"
+        element={<SignInPage />}
+      />
+      <Route
+        path="/sign-up/*"
+        element={<SignUpPage />}
+      />
+      <Route
+        path="*"
+        element={
+          <>
+            <Show when="signed-out">
+              <LandingPage />
+            </Show>
 
-      <Show when="signed-in">
-        <header style={{ padding: '1rem 2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', background: '#0b0f19' }}>
-          <div className="brand-logo" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '1.25rem' }}>
-            <span>✨</span>
-            <span className="logo-text">REACHER</span>
-          </div>
-          <UserButton />
-        </header>
-        <main style={{ padding: '2rem' }}>
-          <ProfileForm />
-          <OutreachForm />
-        </main>
-      </Show>
-    </>
+            <Show when="signed-in">
+              <header style={{ padding: '1rem 2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', background: '#0b0f19' }}>
+                <div className="brand-logo" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '1.25rem' }}>
+                  <span>✨</span>
+                  <span className="logo-text">REACHER</span>
+                </div>
+                <UserButton />
+              </header>
+              <main style={{ padding: '2rem' }}>
+                <ProfileForm />
+                <OutreachForm />
+              </main>
+            </Show>
+          </>
+        }
+      />
+    </Routes>
   )
 }
 
