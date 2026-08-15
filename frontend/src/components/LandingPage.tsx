@@ -160,10 +160,10 @@ export default function LandingPage() {
         />
       </div>
 
-      {/* Ultra-Clean Minimal Hero Content Overlay */}
+      {/* Hero Content Overlay (Only rendered in Scene 1) */}
       <div className="hero-overlay-centered">
         <AnimatePresence mode="wait">
-          {activeScene === 'scene1' ? (
+          {activeScene === 'scene1' && (
             <motion.div
               key="scene1"
               initial={{ opacity: 0, y: 16 }}
@@ -182,49 +182,6 @@ export default function LandingPage() {
               <p className="hero-subtitle-centered">
                 Turn cold outreach into well-researched conversations.
               </p>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="scene2"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.35, ease: 'easeOut' }}
-              className="hero-content-centered"
-            >
-              <span className="badge badge-accent">READY TO REACH OUT?</span>
-
-              <h1 className="hero-title-centered">
-                Turn research into <br />
-                <span className="gradient-text">your next conversation.</span>
-              </h1>
-
-              <p className="hero-subtitle-centered">
-                Your research is ready. Create a personalized outreach draft and stay in control of what gets sent.
-              </p>
-
-              <div className="hero-cta-row">
-                <button
-                  className="btn btn-large btn-secondary"
-                  onClick={() => navigate('/sign-in')}
-                >
-                  Sign in
-                </button>
-
-                <button
-                  className="btn btn-large btn-primary"
-                  onClick={() => navigate('/sign-up')}
-                >
-                  Get started ↗
-                </button>
-              </div>
-
-              <button
-                className="back-scene-link"
-                onClick={() => handleSceneTransition('scene1')}
-              >
-                ← Back to research
-              </button>
             </motion.div>
           )}
         </AnimatePresence>
