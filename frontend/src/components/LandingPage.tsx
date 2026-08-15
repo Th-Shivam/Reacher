@@ -54,13 +54,7 @@ export default function LandingPage() {
     const name = (objectName || '').trim();
     const lowerName = name.toLowerCase();
 
-    if (activeScene === 'scene1') {
-      // Any interaction in scene1 transitions to scene2
-      setActiveScene('scene2');
-      return true;
-    }
-
-    // Map Sign In targets in Scene 2
+    // 1. High priority: Sign In button targets
     if (
       name === 'SignInButton' ||
       name === 'StartSignIn' ||
@@ -73,7 +67,7 @@ export default function LandingPage() {
       return true;
     }
 
-    // Map Sign Up targets in Scene 2
+    // 2. High priority: Sign Up / Get Started button targets
     if (
       name === 'SignUpButton' ||
       name === 'StartSignUp' ||
@@ -86,6 +80,12 @@ export default function LandingPage() {
       lowerName.includes('start')
     ) {
       navigate('/sign-up');
+      return true;
+    }
+
+    // 3. Fallback: non-auth object clicks in scene1 switch to scene2
+    if (activeScene === 'scene1') {
+      setActiveScene('scene2');
       return true;
     }
 

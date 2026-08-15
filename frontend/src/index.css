@@ -91,6 +91,7 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
   border: none;
+  pointer-events: auto;
 }
 
 .btn-secondary {
@@ -142,7 +143,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 .badge {
@@ -158,6 +159,7 @@ body {
   letter-spacing: 0.09em;
   margin-bottom: 1.2rem;
   backdrop-filter: blur(8px);
+  pointer-events: auto;
 }
 
 .badge-accent {
@@ -173,6 +175,7 @@ body {
   letter-spacing: -0.03em;
   margin: 0 0 1rem 0;
   color: #ffffff;
+  pointer-events: none;
 }
 
 @media (max-width: 768px) {
@@ -193,6 +196,7 @@ body {
   color: #9ca3af;
   max-width: 540px;
   margin-bottom: 0;
+  pointer-events: none;
 }
 
 .hero-cta-row {
@@ -202,6 +206,7 @@ body {
   gap: 1rem;
   margin-top: 1.5rem;
   margin-bottom: 1.15rem;
+  pointer-events: auto;
 }
 
 .back-scene-link {
@@ -214,6 +219,7 @@ body {
   padding: 0.4rem 0.8rem;
   border-radius: 8px;
   transition: color 0.2s ease;
+  pointer-events: auto;
 }
 
 .back-scene-link:hover {
