@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth, useSession, useUser } from '@clerk/react';
+import { useAuth } from '@clerk/react';
+import { IconPlus, IconArrowRight, IconX } from '@tabler/icons-react';
+
+/** Derive a short target role label from a free-text job description */
+function extractRole(jd: string): string {
+  if (!jd) return 'Target Role';
+  // Take first line or first 40 chars, whichever is shorter
+  const first = jd.split('\n')[0].trim();
+  return first.length > 44 ? first.slice(0, 42) + '…' : first;
+}
 
 interface OutreachCampaign {
   _id: string;
@@ -11,474 +20,505 @@ interface OutreachCampaign {
   candidate_analysis?: any;
   company_research?: string;
   generated_draft?: string;
-  draft_review?: any;
+  is_saved_in_drafts?: boolean;
+  pipeline_status?: string;
+  pipeline_error?: string;
+  created_at?: string;
 }
 
-export const OutreachForm = () => {
-  const { getToken } = useAuth();
-  const { session } = useSession();
-  const { user } = useUser();
+interface OutreachFormProps {
+  gmailStatus?: { connected: boolean; gmail_accessible?: boolean; email_address?: string; loading: boolean; };
+  onConnectGmail?: (e: React.MouseEvent) => void;
+  onUpdateStats?: () => void;
+  showCreateModal?: boolean;
+  setShowCreateModal?: (show: boolean) => void;
+}
 
+
+
+const pill = (label: string, colors: { bg: string; text: string; border: string }) => (
+  <span style={{
+    display: 'inline-flex', alignItems: 'center', gap: '4px',
+    fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
+    padding: '3px 10px', borderRadius: '100px',
+    background: colors.bg, color: colors.text, border: `1px solid ${colors.border}`,
+  }}>{label}</span>
+);
+
+const COMPLETED = { bg: '#F0FDF4', text: '#166534', border: '#BBF7D0' };
+const PROGRESS  = { bg: '#EEF4FF', text: '#2563EB', border: '#BFDBFE' };
+const PENDING   = { bg: '#F5F5F4', text: '#6B7280', border: '#E7E5E4' };
+
+export const OutreachForm = ({ gmailStatus, onUpdateStats, showCreateModal, setShowCreateModal }: OutreachFormProps) => {
+  const { getToken } = useAuth();
   const [campaigns, setCampaigns] = useState<OutreachCampaign[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Gmail Connection State
-  const [gmailStatus, setGmailStatus] = useState<{
-    connected: boolean;
-    gmail_accessible?: boolean;
-    email_address?: string;
-    loading: boolean;
-  }>({ connected: false, loading: true });
+  const [loadingActions, setLoadingActions] = useState<Record<string, boolean>>({});
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-
-  const [formData, setFormData] = useState({
-    company_name: '',
-    contact_email: '',
-    job_description: ''
-  });
+  const [form, setForm] = useState({ company_name: '', contact_email: '', job_description: '' });
 
   const fetchCampaigns = async () => {
     try {
       const token = await getToken();
-      const res = await fetch('http://localhost:8000/api/outreach', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setCampaigns(data);
-      }
-    } catch (err) {
-      console.error("Failed to fetch campaigns", err);
-    }
+      const res = await fetch('http://localhost:8000/api/outreach', { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) { setCampaigns(await res.json()); if (onUpdateStats) onUpdateStats(); }
+    } catch (e) { console.error(e); }
   };
 
-  useEffect(() => {
-    fetchCampaigns();
-  }, []);
+  useEffect(() => { fetchCampaigns(); }, []);
 
-  const fetchGmailStatus = async () => {
-    try {
-      console.log("Fetching Gmail status...");
-      const token = await getToken();
-      if (!token) {
-        console.log("No token available for Gmail status");
-        return;
-      }
-      console.log("Calling backend /api/gmail/status...");
-      const res = await fetch('http://localhost:8000/api/gmail/status', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      console.log("Backend response status:", res.status);
-      if (res.ok) {
-        const data = await res.json();
-        console.log("Gmail status data:", data);
-        setGmailStatus({ ...data, loading: false });
-      } else {
-        console.error("Gmail status error response");
-        setGmailStatus(prev => ({ ...prev, loading: false }));
-      }
-    } catch (err) {
-      console.error("Failed to fetch Gmail status", err);
-      setGmailStatus(prev => ({ ...prev, loading: false }));
-    }
-  };
-
+  // Auto-poll every 4 s while any campaign has an active pipeline
   useEffect(() => {
-    if (session) {
-      fetchGmailStatus();
-    }
-  }, [session]);
+    const ACTIVE = ['analyzing_jd','analyzing_candidate','researching_company','generating_draft','pushing_to_gmail'];
+    const hasActive = campaigns.some(c => ACTIVE.includes(c.pipeline_status || ''));
+    if (!hasActive) return;
+    const id = setInterval(fetchCampaigns, 4000);
+    return () => clearInterval(id);
+  }, [campaigns]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setMessage('');
-    setError('');
-
+    setMessage(''); setError('');
     try {
       const token = await getToken();
-      
       const res = await fetch('http://localhost:8000/api/outreach', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(form)
       });
-
-      if (!res.ok) {
-        throw new Error('Failed to create outreach campaign');
-      }
-
-      setMessage('Outreach campaign created successfully!');
-      setFormData({ company_name: '', contact_email: '', job_description: '' });
-      await fetchCampaigns(); // Refresh the list
-    } catch (err: any) {
-      setError(err.message || 'An error occurred');
-    } finally {
-      setIsSubmitting(false);
-    }
+      if (!res.ok) throw new Error('Failed to create outreach campaign');
+      setMessage('Flow created!');
+      setForm({ company_name: '', contact_email: '', job_description: '' });
+      if (setShowCreateModal) setShowCreateModal(false);
+      await fetchCampaigns();
+    } catch (err: any) { setError(err.message); }
+    finally { setIsSubmitting(false); }
   };
 
-  const handleAnalyzeJD = async (campaignId: string) => {
+  const runStep = async (id: string, label: string, endpoint: string) => {
+    setLoadingActions(p => ({ ...p, [`${id}-${label}`]: true }));
     try {
       const token = await getToken();
-      const res = await fetch(`http://localhost:8000/api/outreach/${campaignId}/analyze-jd`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+      const res = await fetch(`http://localhost:8000/api/outreach/${id}/${endpoint}`, {
+        method: 'POST', headers: { Authorization: `Bearer ${token}` }
       });
-      if (res.ok) {
-        await fetchCampaigns();
-      } else {
-        throw new Error("Failed to analyze JD");
-      }
-    } catch (err) {
-      console.error(err);
-    }
+      if (res.ok) { await fetchCampaigns(); setMessage(`${label} complete!`); }
+      else { const d = await res.json().catch(() => ({})); throw new Error(d.detail || `Failed: ${label}`); }
+    } catch (err: any) { setError(err.message); }
+    finally { setLoadingActions(p => { const n = { ...p }; delete n[`${id}-${label}`]; return n; }); }
   };
 
-  const handleGenerateDraft = async (campaignId: string) => {
+  const pushToDraft = async (id: string, email: string, body: string) => {
+    if (!gmailStatus?.connected || !gmailStatus?.gmail_accessible) { setError('Gmail not connected.'); return; }
+    if (!email) { setError('No contact email.'); return; }
+    setLoadingActions(p => ({ ...p, [`${id}-gmail`]: true }));
     try {
+      const lines = body.split('\n');
+      let subject = 'Outreach Email';
+      const bodyLines: string[] = [];
+      for (const l of lines) {
+        if (l.toLowerCase().startsWith('subject:')) subject = l.substring(8).trim();
+        else bodyLines.push(l);
+      }
       const token = await getToken();
-      const res = await fetch(`http://localhost:8000/api/outreach/${campaignId}/generate-draft`, {
+      const res = await fetch('http://localhost:8000/api/gmail/draft', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        await fetchCampaigns();
-      } else {
-        const errorData = await res.json();
-        throw new Error(errorData.detail || "Failed to generate draft");
-      }
-    } catch (err: any) {
-      alert(err.message);
-      console.error(err);
-    }
-  };
-
-  const handleAnalyzeCandidate = async (campaignId: string) => {
-    try {
-      const token = await getToken();
-      const res = await fetch(`http://localhost:8000/api/outreach/${campaignId}/analyze-candidate`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        await fetchCampaigns();
-      } else {
-        throw new Error("Failed to analyze Candidate");
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleResearchCompany = async (campaignId: string) => {
-    try {
-      const token = await getToken();
-      const res = await fetch(`http://localhost:8000/api/outreach/${campaignId}/research-company`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        await fetchCampaigns();
-      } else {
-        throw new Error("Failed to research company");
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleReviewDraft = async (campaignId: string) => {
-    try {
-      const token = await getToken();
-      const res = await fetch(`http://localhost:8000/api/outreach/${campaignId}/review-draft`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        await fetchCampaigns();
-      } else {
-        throw new Error("Failed to review draft");
-      }
-    } catch (err: any) {
-      alert(err.message);
-      console.error(err);
-    }
-  };
-
-  const handleCreateDraft = async (_campaignId: string, email: string, draftBody: string) => {
-    try {
-      if (!gmailStatus.connected || !gmailStatus.gmail_accessible) {
-        throw new Error("Gmail is not connected or accessible.");
-      }
-      if (!email) {
-        throw new Error("Contact email is required to create a draft.");
-      }
-
-      // Extract subject line if present
-      const lines = draftBody.split("\n");
-      let subject = "Outreach Email";
-      const bodyLines = [];
-      for (const line of lines) {
-        if (line.toLowerCase().startsWith("subject:")) {
-          subject = line.substring(8).trim();
-        } else {
-          bodyLines.push(line);
-        }
-      }
-      const bodyText = bodyLines.join("\n").trim();
-
-      const token = await getToken();
-      const res = await fetch(`http://localhost:8000/api/gmail/draft`, {
-        method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           recipient_email: email,
-          subject: subject,
-          body_text: bodyText
+          subject,
+          body_text: bodyLines.join('\n').trim(),
+          outreach_id: id,   // ← tell backend which campaign to mark
         })
       });
-      
-      if (res.ok) {
-        const data = await res.json();
-        alert(`Draft created successfully! Draft ID: ${data.draft_id}`);
-      } else {
-        const errData = await res.json();
-        throw new Error(errData.detail || "Failed to create draft");
-      }
-    } catch (err: any) {
-      alert(err.message);
-      console.error(err);
-    }
+      if (res.ok) { const d = await res.json(); setMessage(`Draft saved! ID: ${d.draft_id}`); await fetchCampaigns(); }
+      else { const d = await res.json().catch(() => ({})); throw new Error(d.detail || 'Failed to create draft'); }
+    } catch (err: any) { setError(err.message); }
+    finally { setLoadingActions(p => { const n = { ...p }; delete n[`${id}-gmail`]; return n; }); }
   };
 
-  const handleConnectGmail = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    console.log("Connect Gmail clicked. User:", user);
-    if (!user) return;
-    try {
-      const googleAccount = user.externalAccounts.find(a => a.provider === 'google' || a.verification?.strategy === 'oauth_google');
-      console.log("Found Google Account:", googleAccount);
-      if (googleAccount) {
-        console.log("Reauthorizing existing Google Account...");
-        const updated = await googleAccount.reauthorize({
-          additionalScopes: ['https://www.googleapis.com/auth/gmail.compose'],
-          redirectUrl: window.location.href
-        });
-        console.log("Updated Account:", updated);
-        if (updated.verification?.externalVerificationRedirectURL) {
-          console.log("Redirecting to:", updated.verification.externalVerificationRedirectURL);
-          window.location.href = updated.verification.externalVerificationRedirectURL.toString();
-        } else {
-          console.log("No redirect URL found. Verification state:", updated.verification);
-        }
-      } else {
-        console.log("Creating new Google External Account...");
-        const newAcc = await user.createExternalAccount({
-          strategy: 'oauth_google',
-          redirectUrl: window.location.href,
-          additionalScopes: ['https://www.googleapis.com/auth/gmail.compose']
-        });
-        console.log("New Account:", newAcc);
-        if (newAcc?.verification?.externalVerificationRedirectURL) {
-          console.log("Redirecting to:", newAcc.verification.externalVerificationRedirectURL);
-          window.location.href = newAcc.verification.externalVerificationRedirectURL.toString();
-        } else {
-          console.log("No redirect URL found for new account. Verification state:", newAcc?.verification);
-        }
-      }
-    } catch (err) {
-      console.error("Failed to connect Gmail", err);
-      alert("Failed to connect Gmail: " + (err instanceof Error ? err.message : JSON.stringify(err)));
-    }
+  const cardStyle: React.CSSProperties = {
+    background: '#FFFFFF', border: '1px solid #E8E6DD',
+    borderRadius: '14px', padding: '24px',
+    display: 'flex', flexDirection: 'column', gap: '16px',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.04)', flex: 1,
   };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: '9px', fontWeight: 700, letterSpacing: '0.18em',
+    textTransform: 'uppercase', color: '#999',
+  };
+
+  const btnDark: React.CSSProperties = {
+    display: 'inline-flex', alignItems: 'center', gap: '6px',
+    padding: '7px 16px', borderRadius: '8px', border: 'none',
+    fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+    background: '#1A1A1A', color: '#FFFFFF', cursor: 'pointer', transition: 'background 0.15s',
+  };
+
+  const btnOutline: React.CSSProperties = {
+    display: 'inline-flex', alignItems: 'center', gap: '6px',
+    padding: '6px 14px', borderRadius: '8px', border: '1px solid #E8E6DD',
+    fontSize: '11px', fontWeight: 600, color: '#555', cursor: 'pointer',
+    background: 'transparent', transition: 'all 0.15s',
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', background: '#F8F7F3', border: '1px solid #E8E6DD',
+    borderRadius: '9px', padding: '10px 14px',
+    fontSize: '13px', color: '#1A1A1A', outline: 'none',
+    fontFamily: "'Lato', system-ui, sans-serif",
+    transition: 'border-color 0.15s',
+    boxSizing: 'border-box',
+  };
+
+  const FallbackRow = ({ company, role, stage }: { company: string; role: string; stage: 'sent' | 'progress' }) => (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', alignItems: 'stretch' }}>
+      {/* Research */}
+      <div style={cardStyle}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid #F0EFE9' }}>
+          <span style={labelStyle}>01 · Research</span>
+          {pill('✓ Completed', COMPLETED)}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}>
+          {/* Company initial badge */}
+          <div style={{ width: '44px', height: '44px', borderRadius: '10px', background: '#F0EFE9', border: '1px solid #E8E6DD', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '20px', fontWeight: 700, color: '#1A1A1A', lineHeight: 1 }}>
+              {company.charAt(0).toUpperCase()}
+            </span>
+          </div>
+          <div>
+            <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '22px', fontWeight: 600, color: '#1A1A1A', lineHeight: 1.15 }}>{company}</div>
+            <div style={{ fontSize: '12px', color: '#888', marginTop: '3px', fontWeight: 500 }}>{role}</div>
+          </div>
+        </div>
+        <div style={{ paddingTop: '12px', borderTop: '1px solid #F0EFE9', display: 'flex', justifyContent: 'flex-end' }}>
+          <button style={btnOutline}>View Research →</button>
+        </div>
+      </div>
+      {/* Generate */}
+      <div style={{ ...cardStyle, background: '#FDFCF8' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid #F0EFE9' }}>
+          <span style={labelStyle}>02 · Generate</span>
+          {pill('✓ Completed', COMPLETED)}
+        </div>
+        <div style={{ flex: 1, background: '#FFFFFF', border: '1px solid #E8E6DD', borderRadius: '8px', padding: '12px', fontSize: '13px', color: '#555', lineHeight: 1.6, fontStyle: 'italic' }}>
+          "Angle identified: Blog post on scaling design systems and desktop app UI layout..."
+        </div>
+        <div style={{ paddingTop: '12px', borderTop: '1px solid #F0EFE9', display: 'flex', justifyContent: 'flex-end' }}>
+          <button style={btnOutline}>View Email →</button>
+        </div>
+      </div>
+      {/* Reach Out */}
+      <div style={{ ...cardStyle, background: stage === 'sent' ? '#F5F4EF' : '#EEF4FF', border: stage === 'sent' ? '1px solid #1A1A1A' : '1px solid #BFDBFE' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: `1px solid ${stage === 'sent' ? '#D6D4CC' : '#BFDBFE'}` }}>
+          <span style={{ ...labelStyle, color: stage === 'sent' ? '#555' : '#2563EB' }}>03 · Reach Out</span>
+          {stage === 'sent' ? pill('✓ Sent', COMPLETED) : pill('● In Progress', PROGRESS)}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: '16px', fontWeight: 700, color: '#1A1A1A', marginBottom: '4px' }}>
+            {stage === 'sent' ? 'Gmail Draft Created' : 'Saving to Gmail Drafts'}
+          </div>
+          <div style={{ fontSize: '12px', color: '#666' }}>
+            {stage === 'sent' ? '2 hours ago · STATUS: DELIVERED' : 'Syncing OAuth session'}
+          </div>
+        </div>
+        <div style={{ paddingTop: '12px', borderTop: `1px solid ${stage === 'sent' ? '#D6D4CC' : '#BFDBFE'}`, display: 'flex', justifyContent: 'flex-end' }}>
+          <button style={btnOutline}>View Status →</button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <div style={{ marginTop: '2rem', borderTop: '1px solid #ccc', paddingTop: '2rem' }}>
-      
-      {/* Gmail Connection Section */}
-      <div style={{ marginBottom: '2rem', padding: '15px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e9ecef', textAlign: 'left' }}>
-        <h3>Gmail</h3>
-        <p style={{ margin: '5px 0 15px 0', color: '#6c757d' }}>Connect your Gmail account to create Gmail drafts directly from Reacher.</p>
-        
-        {gmailStatus.loading ? (
-          <p>Loading Gmail status...</p>
-        ) : gmailStatus.connected && gmailStatus.gmail_accessible ? (
-          <div>
-            <span style={{ color: '#10b981', fontWeight: 'bold', marginRight: '15px' }}>✓ Gmail connected ({gmailStatus.email_address})</span>
-            <button 
-              onClick={handleConnectGmail}
-              style={{ padding: '8px 15px', background: '#e5e7eb', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-            >
-              Reconnect Gmail
-            </button>
-          </div>
-        ) : (
-          <div>
-            {gmailStatus.connected && !gmailStatus.gmail_accessible && (
-              <p style={{ color: '#ea4335', marginBottom: '10px' }}>⚠️ Connected to Google, but Gmail access is missing or invalid.</p>
-            )}
-            <button 
-              onClick={handleConnectGmail}
-              style={{ padding: '8px 15px', background: '#ea4335', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-            >
-              Connect Gmail
-            </button>
-          </div>
-        )}
-      </div>
+    <section style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
 
-      <h2>Target Job / Outreach Campaign</h2>
-      <p>Enter the details of the job and company you want to target.</p>
-
-      {message && <div style={{ color: 'green', marginBottom: '1rem' }}>{message}</div>}
-      {error && <div style={{ color: 'red', marginBottom: '1rem' }}>{error}</div>}
-
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px', maxWidth: '400px', margin: '0 auto', textAlign: 'left' }}>
-        <label style={{ display: 'flex', flexDirection: 'column' }}>
-          Company Name:
-          <input
-            type="text"
-            required
-            value={formData.company_name}
-            onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-            style={{ padding: '8px' }}
-          />
-        </label>
-
-        <label style={{ display: 'flex', flexDirection: 'column' }}>
-          Recruiter/Contact Email:
-          <input
-            type="email"
-            required
-            value={formData.contact_email}
-            onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
-            style={{ padding: '8px' }}
-          />
-        </label>
-
-        <label style={{ display: 'flex', flexDirection: 'column' }}>
-          Job Description:
-          <textarea
-            required
-            rows={6}
-            value={formData.job_description}
-            onChange={(e) => setFormData({ ...formData, job_description: e.target.value })}
-            style={{ padding: '8px', resize: 'vertical' }}
-          />
-        </label>
-
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          style={{ padding: '10px', background: '#0070f3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-        >
-          {isSubmitting ? 'Saving...' : 'Create Target'}
-        </button>
-      </form>
-
-      {campaigns.length > 0 && (
-        <div style={{ marginTop: '2rem', textAlign: 'left' }}>
-          <h3>Your Targets</h3>
-          <ul style={{ listStyleType: 'none', padding: 0 }}>
-            {campaigns.map(c => (
-              <li key={c._id} style={{ background: '#f5f5f5', margin: '10px 0', padding: '15px', borderRadius: '4px' }}>
-                <strong>{c.company_name}</strong> - Status: <span style={{ color: '#0070f3' }}>{c.status}</span>
-                <br />
-                <small>Contact: {c.contact_email || 'None'}</small>
-                <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
-                  <button onClick={() => handleAnalyzeJD(c._id)} style={{ padding: '5px 10px', cursor: 'pointer' }}>
-                    Analyze JD
-                  </button>
-                  <button onClick={() => handleAnalyzeCandidate(c._id)} style={{ padding: '5px 10px', cursor: 'pointer' }}>
-                    Analyze Candidate
-                  </button>
-                  <button onClick={() => handleResearchCompany(c._id)} style={{ padding: '5px 10px', cursor: 'pointer' }}>
-                    Research Company
-                  </button>
-                  <button 
-                    onClick={() => handleGenerateDraft(c._id)} 
-                    style={{ padding: '5px 10px', cursor: 'pointer', background: '#0070f3', color: 'white', border: 'none', borderRadius: '4px' }}
-                    disabled={!c.jd_analysis || !c.candidate_analysis || !c.company_research}
-                  >
-                    Generate Draft
-                  </button>
-                  {c.generated_draft && (
-                    <button 
-                      onClick={() => handleReviewDraft(c._id)} 
-                      style={{ padding: '5px 10px', cursor: 'pointer', background: '#10b981', color: 'white', border: 'none', borderRadius: '4px' }}
-                    >
-                      Review Draft
-                    </button>
-                  )}
-                </div>
-                {c.generated_draft && (
-                  <div style={{ marginTop: '10px', background: '#fff9e6', padding: '15px', borderRadius: '4px', border: '1px solid #ffe066' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-                      <h4 style={{ margin: '0 0 10px 0', color: '#b7791f' }}>Generated Draft:</h4>
-                      
-                      {gmailStatus.connected && gmailStatus.gmail_accessible && (
-                        <button 
-                          onClick={() => handleCreateDraft(c._id, c.contact_email || "", c.generated_draft || "")}
-                          style={{ padding: '6px 12px', cursor: 'pointer', background: '#ea4335', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.9em' }}
-                        >
-                          Push to Gmail Drafts 🚀
-                        </button>
-                      )}
-                    </div>
-                    <pre style={{ whiteSpace: 'pre-wrap', margin: 0, fontFamily: 'inherit', fontSize: '0.9em', color: '#4a5568' }}>
-                      {c.generated_draft}
-                    </pre>
-                  </div>
-                )}
-                {c.draft_review && (
-                  <div style={{ marginTop: '10px', background: c.draft_review.score >= 8 ? '#d1fae5' : '#fee2e2', padding: '15px', borderRadius: '4px', border: `1px solid ${c.draft_review.score >= 8 ? '#10b981' : '#ef4444'}` }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <strong>AI Review Scorecard</strong>
-                      <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: c.draft_review.score >= 8 ? '#059669' : '#b91c1c' }}>
-                        {c.draft_review.score} / 10
-                      </span>
-                    </div>
-                    <ul style={{ marginTop: '10px', fontSize: '14px', lineHeight: '1.5' }}>
-                      <li><strong>Tone:</strong> {c.draft_review.tone_analysis}</li>
-                      <li><strong>Length:</strong> {c.draft_review.length_analysis}</li>
-                      <li><strong>Alignment:</strong> {c.draft_review.alignment_analysis}</li>
-                    </ul>
-                    <div style={{ marginTop: '10px', fontSize: '14px', fontStyle: 'italic' }}>
-                      <strong>Actionable Feedback:</strong> {c.draft_review.overall_feedback}
-                    </div>
-                  </div>
-                )}
-                {c.jd_analysis && (
-                  <div style={{ marginTop: '10px', background: '#eef', padding: '10px', borderRadius: '4px', fontSize: '12px' }}>
-                    <strong>JD Analysis:</strong>
-                    <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(c.jd_analysis, null, 2)}</pre>
-                  </div>
-                )}
-                {c.candidate_analysis && (
-                  <div style={{ marginTop: '10px', background: '#efe', padding: '10px', borderRadius: '4px', fontSize: '12px' }}>
-                    <strong>Candidate Analysis:</strong>
-                    <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(c.candidate_analysis, null, 2)}</pre>
-                  </div>
-                )}
-                {c.company_research && (
-                  <div style={{ marginTop: '10px', background: '#e6f7ff', padding: '10px', borderRadius: '4px', fontSize: '12px' }}>
-                    <strong>Company Research:</strong>
-                    <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>{c.company_research}</pre>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
+      {/* Alerts */}
+      {message && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 18px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '10px', fontSize: '12px', fontWeight: 600, color: '#166534' }}>
+          {message}
+          <button onClick={() => setMessage('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#166534', fontSize: '16px', lineHeight: 1 }}>×</button>
         </div>
       )}
-    </div>
+      {error && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 18px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '10px', fontSize: '12px', fontWeight: 600, color: '#9F1239' }}>
+          {error}
+          <button onClick={() => setError('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9F1239', fontSize: '16px', lineHeight: 1 }}>×</button>
+        </div>
+      )}
+
+      {/* ─── Section Header ─── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <h2 style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#1A1A1A', margin: 0 }}>Active Pipeline</h2>
+          <p style={{ fontSize: '13px', color: '#888', marginTop: '4px' }}>
+            {campaigns.length > 0 ? campaigns.length : 2} prospects currently processing
+          </p>
+        </div>
+        <button
+          onClick={() => setShowCreateModal ? setShowCreateModal(!showCreateModal) : undefined}
+          style={btnDark}
+        >
+          <IconPlus style={{ width: '14px', height: '14px' }} />
+          New Flow
+        </button>
+      </div>
+
+      {/* ─── Create New Flow Form ─── */}
+      {(showCreateModal || campaigns.length === 0) && (
+        <div style={{
+          background: '#FFFFFF', border: '1px solid #E8E6DD',
+          borderRadius: '16px', padding: '32px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid #F0EFE9' }}>
+            <div>
+              <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '26px', fontWeight: 500, color: '#1A1A1A', margin: 0 }}>
+                Create New Prospect Flow
+              </h3>
+              <p style={{ fontSize: '13px', color: '#888', marginTop: '4px' }}>
+                Start a personalized outreach workflow for a prospect.
+              </p>
+            </div>
+            {showCreateModal && setShowCreateModal && (
+              <button onClick={() => setShowCreateModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: '4px' }}>
+                <IconX style={{ width: '18px', height: '18px' }} />
+              </button>
+            )}
+          </div>
+
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+                <label style={labelStyle}>Company Name *</label>
+                <input
+                  type="text" required
+                  value={form.company_name}
+                  onChange={e => setForm({ ...form, company_name: e.target.value })}
+                  placeholder="Linear, OpenAI, Stripe"
+                  style={inputStyle}
+                  onFocus={e => (e.target.style.borderColor = '#1A1A1A')}
+                  onBlur={e => (e.target.style.borderColor = '#E8E6DD')}
+                />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+                <label style={labelStyle}>Contact Email *</label>
+                <input
+                  type="email" required
+                  value={form.contact_email}
+                  onChange={e => setForm({ ...form, contact_email: e.target.value })}
+                  placeholder="alex@company.com"
+                  style={inputStyle}
+                  onFocus={e => (e.target.style.borderColor = '#1A1A1A')}
+                  onBlur={e => (e.target.style.borderColor = '#E8E6DD')}
+                />
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+              <label style={labelStyle}>Job / Role / Target Angle *</label>
+              <textarea
+                required rows={3}
+                value={form.job_description}
+                onChange={e => setForm({ ...form, job_description: e.target.value })}
+                placeholder="Paste the role, company context, or targeted outreach angle..."
+                style={{ ...inputStyle, height: '110px', resize: 'vertical' }}
+                onFocus={e => (e.target.style.borderColor = '#1A1A1A')}
+                onBlur={e => (e.target.style.borderColor = '#E8E6DD')}
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '4px' }}>
+              <button type="submit" disabled={isSubmitting} style={{ ...btnDark, opacity: isSubmitting ? 0.6 : 1, padding: '10px 24px', fontSize: '12px' }}>
+                {isSubmitting ? 'Initializing...' : 'Start Prospect Pipeline'}
+                <IconArrowRight style={{ width: '14px', height: '14px' }} />
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* ─── Pipeline Rows ─── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+        {campaigns.map((c) => {
+          const isJdDone = Boolean(c.jd_analysis);
+          const isCandidateDone = Boolean(c.candidate_analysis);
+          const isResearchDone = Boolean(c.company_research);
+          const isResearchComplete = isJdDone && isCandidateDone && isResearchDone;
+          const isDraftReady = Boolean(c.generated_draft);
+          const isSynced = c.status === 'draft_created' || c.status === 'synced';
+          const isSent = c.status === 'sent' || c.status === 'completed';
+          const isExpanded = Boolean(expanded[c._id]);
+          const targetRole = extractRole(c.job_description);
+
+          return (
+            <div key={c._id} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', alignItems: 'stretch' }}>
+
+                {/* Research — company-centric */}
+                <div style={cardStyle}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid #F0EFE9' }}>
+                    <span style={labelStyle}>01 · Research</span>
+                    {isResearchComplete ? pill('✓ Completed', COMPLETED) : pill('Pending', PENDING)}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}>
+                    {/* Company initial badge */}
+                    <div style={{ width: '44px', height: '44px', borderRadius: '10px', background: '#F0EFE9', border: '1px solid #E8E6DD', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '20px', fontWeight: 700, color: '#1A1A1A', lineHeight: 1 }}>
+                        {c.company_name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '22px', fontWeight: 600, color: '#1A1A1A', lineHeight: 1.15 }}>{c.company_name}</div>
+                      <div style={{ fontSize: '12px', color: '#888', marginTop: '3px', fontWeight: 500 }}>{targetRole}</div>
+                    </div>
+                  </div>
+
+                  {/* Step progress indicators */}
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {[
+                      { done: isJdDone,        label: 'JD' },
+                      { done: isCandidateDone, label: 'Candidate' },
+                      { done: isResearchDone,  label: 'Company' },
+                    ].map(step => (
+                      <span key={step.label} style={{
+                        fontSize: '10px', fontWeight: 700, padding: '2px 8px',
+                        borderRadius: '100px', letterSpacing: '0.06em',
+                        background: step.done ? '#F0FDF4' : '#F5F5F4',
+                        color:      step.done ? '#166534' : '#9CA3AF',
+                        border: `1px solid ${step.done ? '#BBF7D0' : '#E5E7EB'}`,
+                      }}>
+                        {step.done ? '✓' : '·'} {step.label}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div style={{ paddingTop: '12px', borderTop: '1px solid #F0EFE9', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={() => runStep(c._id, 'JD Analysis', 'analyze-jd')}
+                      disabled={Boolean(loadingActions[`${c._id}-JD Analysis`])}
+                      style={{ ...btnOutline, opacity: isJdDone ? 0.55 : 1 }}
+                    >
+                      {loadingActions[`${c._id}-JD Analysis`] ? 'Running…' : isJdDone ? '✓ JD' : 'Analyze JD'}
+                    </button>
+                    <button
+                      onClick={() => runStep(c._id, 'Candidate Analysis', 'analyze-candidate')}
+                      disabled={Boolean(loadingActions[`${c._id}-Candidate Analysis`])}
+                      style={{ ...btnOutline, opacity: isCandidateDone ? 0.55 : 1 }}
+                    >
+                      {loadingActions[`${c._id}-Candidate Analysis`] ? 'Running…' : isCandidateDone ? '✓ Candidate' : 'Analyze Candidate'}
+                    </button>
+                    <button
+                      onClick={() => runStep(c._id, 'Company Research', 'research-company')}
+                      disabled={Boolean(loadingActions[`${c._id}-Company Research`])}
+                      style={{ ...btnOutline, opacity: isResearchDone ? 0.55 : 1 }}
+                    >
+                      {loadingActions[`${c._id}-Company Research`] ? 'Running…' : isResearchDone ? '✓ Research' : 'Research'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Generate */}
+                <div style={{ ...cardStyle, background: '#FDFCF8' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid #F0EFE9' }}>
+                    <span style={labelStyle}>02 · Generate</span>
+                    {isDraftReady ? pill('✓ Completed', COMPLETED) : pill('Pending', PENDING)}
+                  </div>
+                  <div style={{ flex: 1, background: '#FFFFFF', border: '1px solid #E8E6DD', borderRadius: '8px', padding: '12px', fontSize: '13px', color: '#555', lineHeight: 1.6, fontStyle: 'italic', overflow: 'hidden' }}>
+                    {c.company_research
+                      ? `"${c.company_research.slice(0, 110)}..."`
+                      : c.job_description
+                      ? `"${c.job_description.slice(0, 110)}..."`
+                      : '"Angle identified..."'}
+                  </div>
+                  <div style={{ paddingTop: '12px', borderTop: '1px solid #F0EFE9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <button
+                      onClick={() => runStep(c._id, 'Generate Draft', 'generate-draft')}
+                      disabled={Boolean(loadingActions[`${c._id}-Generate Draft`])}
+                      style={btnDark}
+                    >
+                      {isDraftReady ? 'Regenerate' : 'Generate Email'}
+                    </button>
+                    {isDraftReady && (
+                      <button onClick={() => setExpanded(p => ({ ...p, [c._id]: !p[c._id] }))} style={{ ...btnOutline, border: 'none', color: '#2563EB' }}>
+                        {isExpanded ? 'Hide Draft' : 'View Email →'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Reach Out */}
+                <div style={{ ...cardStyle, background: isSent ? '#F5F4EF' : isSynced ? '#EEF4FF' : '#FFFFFF', border: `1px solid ${isSent ? '#1A1A1A' : isSynced ? '#BFDBFE' : '#E8E6DD'}` }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: `1px solid ${isSent ? '#D6D4CC' : isSynced ? '#BFDBFE' : '#F0EFE9'}` }}>
+                    <span style={{ ...labelStyle, color: isSynced ? '#2563EB' : '#999' }}>03 · Reach Out</span>
+                    {isSent ? pill('✓ Sent', COMPLETED) : isSynced ? pill('● In Progress', PROGRESS) : pill('Ready', PENDING)}
+                  </div>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div>
+                      <div style={{ fontSize: '16px', fontWeight: 700, color: '#1A1A1A', marginBottom: '4px' }}>
+                        {isSent ? 'Outreach Sent' : isSynced ? 'Gmail Draft Created' : 'Awaiting Email Draft'}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#666' }}>
+                        {isSent ? '2 hours ago · STATUS: DELIVERED' : isSynced ? 'Active in Gmail Drafts' : 'Run Generate step first'}
+                      </div>
+                    </div>
+                    {/* is_saved_in_drafts badge */}
+                    {c.is_saved_in_drafts && (
+                      <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '6px',
+                        padding: '5px 10px', borderRadius: '100px',
+                        background: '#F0FDF4', border: '1px solid #BBF7D0',
+                        fontSize: '11px', fontWeight: 700, color: '#166534',
+                        alignSelf: 'flex-start',
+                      }}>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#16A34A', flexShrink: 0 }} />
+                        Saved to Gmail Drafts
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ paddingTop: '12px', borderTop: `1px solid ${isSent ? '#D6D4CC' : isSynced ? '#BFDBFE' : '#F0EFE9'}`, display: 'flex', justifyContent: 'flex-end' }}>
+                    {isDraftReady && (
+                      <button
+                        onClick={() => pushToDraft(c._id, c.contact_email, c.generated_draft || '')}
+                        disabled={Boolean(loadingActions[`${c._id}-gmail`])}
+                        style={btnDark}
+                      >
+                        {loadingActions[`${c._id}-gmail`] ? 'Saving...' : c.is_saved_in_drafts ? 'Re-push to Gmail →' : 'Push to Gmail →'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Expanded Draft */}
+              {isExpanded && c.generated_draft && (
+                <div style={{ background: '#FFFFFF', border: '1px solid #E8E6DD', borderRadius: '14px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '14px', borderBottom: '1px solid #F0EFE9' }}>
+                    <span style={labelStyle}>Generated Outreach Email</span>
+                    <button onClick={() => { navigator.clipboard.writeText(c.generated_draft || ''); setMessage('Copied!'); }} style={{ ...btnOutline, color: '#2563EB', border: 'none', fontSize: '11px' }}>
+                      Copy Text
+                    </button>
+                  </div>
+                  <pre style={{ fontFamily: "'Lato', system-ui, sans-serif", fontSize: '13px', lineHeight: 1.7, color: '#1A1A1A', whiteSpace: 'pre-wrap', margin: 0 }}>
+                    {c.generated_draft}
+                  </pre>
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Fallback placeholder rows when no real campaigns */}
+        {campaigns.length === 0 && (
+          <>
+            <FallbackRow company="Linear" role="Head of Growth" stage="sent" />
+            <FallbackRow company="OpenAI" role="Marketing Manager" stage="progress" />
+          </>
+        )}
+      </div>
+    </section>
   );
 };
