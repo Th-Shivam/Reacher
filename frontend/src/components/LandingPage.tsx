@@ -141,20 +141,11 @@ export default function LandingPage() {
         />
       </div>
 
-      {/* Top-Left Brand Logo (Image Asset - 3x Enlarged) */}
-      <div
-        onClick={() => handleSceneTransition('scene1')}
-        className="fixed top-4 left-6 z-50 pointer-events-auto cursor-pointer select-none group"
-      >
-        <img
-          src="/logo.png"
-          alt="REACHER"
-          className="h-20 md:h-28 w-auto max-w-[320px] md:max-w-[450px] object-contain transition-opacity duration-200 hover:opacity-90"
-        />
-      </div>
-
       {/* Floating Dock Navbar at Bottom Center */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-auto">
+      <div
+        className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 pointer-events-auto sm:bottom-6"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
         <FloatingDockDemo
           activeScene={activeScene}
           onSelectScene={(scene) => handleSceneTransition(scene)}

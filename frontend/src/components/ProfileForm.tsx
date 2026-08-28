@@ -133,7 +133,7 @@ export default function ProfileForm({ onUpdateStats }: ProfileFormProps) {
             <IconUser style={{ width: '13px', height: '13px' }} />
             Candidate Intelligence Profile
           </div>
-          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '34px', fontWeight: 500, color: '#1A1A1A', margin: '0 0 6px 0', lineHeight: 1.1 }}>
+          <h2 className="text-[27px] sm:text-[34px]" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 500, color: '#1A1A1A', margin: '0 0 6px 0', lineHeight: 1.1 }}>
             Your Professional Profile
           </h2>
           <p style={{ fontSize: '13px', color: '#888', margin: 0 }}>
@@ -158,26 +158,26 @@ export default function ProfileForm({ onUpdateStats }: ProfileFormProps) {
 
       <form onSubmit={handleSubmit}>
         {/* ─── 2-column master layout ─── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'start' }}>
+        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
 
           {/* ══════════════ LEFT COLUMN ══════════════ */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
             {/* Resume upload */}
-            <div style={{ background: '#FFFFFF', border: '1px solid #E8E6DD', borderRadius: '12px', padding: '20px 22px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div className="px-5 py-5 sm:px-[22px]" style={{ background: '#FFFFFF', border: '1px solid #E8E6DD', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
                   <div style={{ width: '38px', height: '38px', borderRadius: '8px', background: '#F8F7F3', border: '1px solid #E8E6DD', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <IconFileText style={{ width: '18px', height: '18px', color: '#555' }} />
                   </div>
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: '13px', fontWeight: 700, color: '#1A1A1A', marginBottom: '2px' }}>Resume (PDF)</div>
-                    <div style={{ fontSize: '11px', color: resumeMetadata ? '#166534' : '#888' }}>
+                    <div style={{ fontSize: '11px', color: resumeMetadata ? '#166534' : '#888', overflowWrap: 'anywhere' }}>
                       {resumeMetadata ? resumeMetadata.filename : 'Upload for automated parsing'}
                     </div>
                   </div>
                 </div>
-                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '8px', border: 'none', fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', background: '#1A1A1A', color: '#FFFFFF', cursor: 'pointer', flexShrink: 0 }}>
+                <label className="w-full justify-center sm:w-auto" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '11px 14px', borderRadius: '8px', border: 'none', fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', background: '#1A1A1A', color: '#FFFFFF', cursor: 'pointer', flexShrink: 0, minHeight: '40px' }}>
                   <IconUpload style={{ width: '13px', height: '13px' }} />
                   {isUploading ? 'Uploading…' : 'Upload PDF'}
                   <input type="file" accept="application/pdf" onChange={handleFileUpload} disabled={isUploading} style={{ display: 'none' }} />
@@ -186,12 +186,12 @@ export default function ProfileForm({ onUpdateStats }: ProfileFormProps) {
             </div>
 
             {/* Personal Information */}
-            <div style={{ background: '#FFFFFF', border: '1px solid #E8E6DD', borderRadius: '12px', padding: '20px 22px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div className="px-5 py-5 sm:px-[22px]" style={{ background: '#FFFFFF', border: '1px solid #E8E6DD', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               <div style={{ ...divider }}>
                 <IconUser style={{ width: '14px', height: '14px', color: '#4A90E2' }} />
                 Personal Information
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label style={lbl}>Full Name *</label>
                   <input type="text" required value={profile.name} onChange={e => setProfile({ ...profile, name: e.target.value })} placeholder="e.g. Alex Morgan" style={inp} onFocus={focus} onBlur={blur} />
@@ -212,7 +212,7 @@ export default function ProfileForm({ onUpdateStats }: ProfileFormProps) {
             </div>
 
             {/* Social & Portfolio Links */}
-            <div style={{ background: '#FFFFFF', border: '1px solid #E8E6DD', borderRadius: '12px', padding: '20px 22px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div className="px-5 py-5 sm:px-[22px]" style={{ background: '#FFFFFF', border: '1px solid #E8E6DD', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               <div style={{ ...divider }}>
                 <IconBrandGithub style={{ width: '14px', height: '14px', color: '#4A90E2' }} />
                 Social & Portfolio Links
@@ -242,7 +242,7 @@ export default function ProfileForm({ onUpdateStats }: ProfileFormProps) {
 
           {/* ══════════════ RIGHT COLUMN ══════════════ */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ background: '#FFFFFF', border: '1px solid #E8E6DD', borderRadius: '12px', padding: '20px 22px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div className="px-5 py-5 sm:px-[22px]" style={{ background: '#FFFFFF', border: '1px solid #E8E6DD', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               <div style={{ ...divider }}>
                 <IconCode style={{ width: '14px', height: '14px', color: '#4A90E2' }} />
                 Technical Background & Experience
@@ -300,20 +300,20 @@ export default function ProfileForm({ onUpdateStats }: ProfileFormProps) {
             </div>
 
             {/* Save button pinned to bottom of right column */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <div className="flex justify-stretch sm:justify-end">
               <button
                 type="submit"
                 disabled={isSaving}
+                className="w-full sm:w-auto"
                 style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '8px',
-                  padding: '10px 24px', borderRadius: '9px', border: 'none',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  padding: '13px 24px', borderRadius: '9px', border: 'none',
                   fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
                   background: isSaving ? '#555' : '#1A1A1A', color: '#FFFFFF',
                   cursor: isSaving ? 'not-allowed' : 'pointer',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.12)', transition: 'background 0.15s',
+                  minHeight: '46px',
                 }}
-                onMouseEnter={e => { if (!isSaving) (e.currentTarget.style.background = '#333'); }}
-                onMouseLeave={e => { if (!isSaving) (e.currentTarget.style.background = '#1A1A1A'); }}
               >
                 <IconDeviceFloppy style={{ width: '15px', height: '15px' }} />
                 {isSaving ? 'Saving…' : 'Save Candidate Profile'}

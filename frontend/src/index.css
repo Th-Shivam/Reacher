@@ -67,11 +67,23 @@ body {
 
 .landing-container {
   position: relative;
-  width: 100vw;
+  width: 100%;
   height: 100vh;
+  /* dvh tracks the mobile URL bar; 100vh alone crops the dock on phones */
+  height: 100dvh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+/* iOS Safari auto-zooms any focused input under 16px. The form inputs carry
+   inline font sizes (13px), so only !important can reach them. */
+@media (max-width: 640px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
 }
 
 .spline-wrapper {
@@ -226,6 +238,25 @@ body {
 @media (max-width: 768px) {
   .hero-title-centered {
     font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .hero-title-centered {
+    font-size: 1.95rem;
+  }
+  .hero-overlay-centered {
+    padding-top: 5.5rem;
+    padding-left: 1.1rem;
+    padding-right: 1.1rem;
+  }
+  .badge {
+    font-size: 0.62rem;
+    padding: 0.3rem 0.7rem;
+    margin-bottom: 0.9rem;
+  }
+  .hero-subtitle-centered {
+    font-size: 1rem;
   }
 }
 

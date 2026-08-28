@@ -129,22 +129,18 @@ export default function Dashboard() {
 
       {/* ═══ NAV ═══════════════════════════════════════════════════════════════ */}
       <nav
+        className="flex flex-col gap-0 px-4 sm:px-6 lg:px-12 md:h-[68px] md:flex-row md:items-center md:justify-between"
         style={{
-          height: '68px',
           backgroundColor: '#FFFFFF',
           borderBottom: '1px solid #E8E6DD',
           position: 'sticky',
           top: 0,
           zIndex: 50,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 48px',
           boxShadow: '0 1px 0 #E8E6DD',
         }}
       >
         {/* Left: Brand + Nav links */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
+        <div className="flex w-full items-center justify-between gap-4 py-3 md:w-auto md:justify-start md:gap-10 md:py-0">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '22px', fontWeight: 700, letterSpacing: '0.04em', color: '#1A1A1A' }}>
               REACHER
@@ -156,56 +152,75 @@ export default function Dashboard() {
             }}>PRO</span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', paddingLeft: '32px', borderLeft: '1px solid #E8E6DD' }}>
-            {[
-              { id: 'outreach' as DashboardTab, label: 'Dashboard' },
-              { id: 'profile' as DashboardTab, label: 'Profile' },
-              { id: 'gmail' as DashboardTab, label: 'Settings' },
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+          {/* Gmail + avatar ride alongside the brand on mobile so the tab strip
+              gets a full row of its own */}
+          <div className="flex items-center gap-2 md:hidden">
+            {gmailStatus.connected && gmailStatus.gmail_accessible ? (
+              <span
+                title={gmailStatus.email_address || 'Gmail Synced'}
                 style={{
-                  padding: '7px 16px',
-                  fontSize: '12px',
-                  fontWeight: activeTab === tab.id ? 700 : 500,
-                  letterSpacing: '0.03em',
-                  borderRadius: '7px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  backgroundColor: activeTab === tab.id ? '#1A1A1A' : 'transparent',
-                  color: activeTab === tab.id ? '#FFFFFF' : '#6B6B6B',
+                  width: '9px', height: '9px', borderRadius: '50%',
+                  background: '#22C55E', flexShrink: 0,
                 }}
-                onMouseEnter={e => {
-                  if (activeTab !== tab.id) {
-                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#F0EFE9';
-                    (e.currentTarget as HTMLButtonElement).style.color = '#1A1A1A';
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (activeTab !== tab.id) {
-                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent';
-                    (e.currentTarget as HTMLButtonElement).style.color = '#6B6B6B';
-                  }
+              />
+            ) : (
+              <button
+                onClick={handleConnectGmail}
+                aria-label="Connect Gmail"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: '34px', height: '34px',
+                  background: '#FFFFFF', borderRadius: '100px',
+                  border: '1px solid #E8E6DD', cursor: 'pointer',
                 }}
               >
-                {tab.label}
+                <IconBrandGmail style={{ width: '16px', height: '16px', color: '#4285F4' }} />
               </button>
-            ))}
+            )}
+            <UserButton appearance={{ elements: { userButtonAvatarBox: 'w-8 h-8' } }} />
           </div>
         </div>
 
-        {/* Right: Gmail status + Avatar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        {/* Tab strip: own scrollable row on mobile, inline on desktop */}
+        <div className="-mx-4 flex items-center gap-1 overflow-x-auto px-4 pb-2 md:mx-0 md:ml-8 md:overflow-visible md:border-l md:border-[#E8E6DD] md:pb-0 md:pl-8">
+          {[
+            { id: 'outreach' as DashboardTab, label: 'Dashboard' },
+            { id: 'profile' as DashboardTab, label: 'Profile' },
+            { id: 'gmail' as DashboardTab, label: 'Settings' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className="shrink-0"
+              style={{
+                padding: '7px 16px',
+                fontSize: '12px',
+                fontWeight: activeTab === tab.id ? 700 : 500,
+                letterSpacing: '0.03em',
+                borderRadius: '7px',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                backgroundColor: activeTab === tab.id ? '#1A1A1A' : 'transparent',
+                color: activeTab === tab.id ? '#FFFFFF' : '#6B6B6B',
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Right: Gmail status + Avatar (desktop only) */}
+        <div className="hidden items-center gap-4 md:flex">
           {gmailStatus.connected && gmailStatus.gmail_accessible ? (
             <div style={{
               display: 'flex', alignItems: 'center', gap: '8px',
               fontSize: '12px', fontWeight: 500, color: '#166534',
               background: '#F0FDF4', padding: '6px 14px',
-              borderRadius: '100px', border: '1px solid #BBF7D0'
+              borderRadius: '100px', border: '1px solid #BBF7D0',
+              maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>
-              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#22C55E', animation: 'pulse 2s infinite' }} />
+              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#22C55E', flexShrink: 0 }} />
               {gmailStatus.email_address || 'Gmail Synced'}
             </div>
           ) : (
@@ -217,7 +232,8 @@ export default function Dashboard() {
                 background: '#FFFFFF', padding: '7px 16px',
                 borderRadius: '100px', border: '1px solid #E8E6DD',
                 cursor: 'pointer', transition: 'all 0.15s ease',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
+                boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                whiteSpace: 'nowrap',
               }}
               onMouseEnter={e => (e.currentTarget.style.background = '#F0EFE9')}
               onMouseLeave={e => (e.currentTarget.style.background = '#FFFFFF')}
@@ -231,13 +247,13 @@ export default function Dashboard() {
       </nav>
 
       {/* ═══ PAGE BODY ══════════════════════════════════════════════════════════ */}
-      <div style={{ width: '100%', maxWidth: '1440px', margin: '0 auto', padding: '0 48px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col px-4 sm:px-6 lg:px-12">
 
         {/* ─── HERO HEADER (Dashboard tab only) ────────────────────────────────── */}
-        {activeTab === 'outreach' && <section style={{ paddingTop: '52px', paddingBottom: '52px', borderBottom: '1px solid #E8E6DD', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '40px', flexWrap: 'wrap' }}>
+        {activeTab === 'outreach' && <section className="flex flex-col items-start justify-between gap-8 border-b border-[#E8E6DD] pt-8 pb-8 md:flex-row md:gap-10 md:pt-[52px] md:pb-[52px]">
           {/* Left copy */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '580px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#888' }}>
                 Pipeline Overview
               </span>
@@ -253,7 +269,10 @@ export default function Dashboard() {
               </span>
             </div>
 
-            <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '60px', fontWeight: 500, lineHeight: 1.05, letterSpacing: '-0.02em', color: '#1A1A1A', margin: 0 }}>
+            <h1
+              className="text-[38px] sm:text-[48px] lg:text-[60px]"
+              style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 500, lineHeight: 1.05, letterSpacing: '-0.02em', color: '#1A1A1A', margin: 0 }}
+            >
               Automation Flow
             </h1>
 
@@ -263,15 +282,17 @@ export default function Dashboard() {
           </div>
 
           {/* Right: single Gmail drafts card */}
-          <div style={{
-            background: '#FFFFFF', border: '1px solid #E8E6DD',
-            borderRadius: '14px', padding: '24px 28px',
-            display: 'flex', alignItems: 'center', gap: '20px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-            flexShrink: 0,
-          }}>
+          <div
+            className="w-full shrink-0 px-6 py-5 md:w-auto md:px-7 md:py-6"
+            style={{
+              background: '#FFFFFF', border: '1px solid #E8E6DD',
+              borderRadius: '14px',
+              display: 'flex', alignItems: 'center', gap: '20px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+            }}
+          >
             <div>
-              <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '52px', fontWeight: 500, lineHeight: 1, color: statsLoading ? '#CCC' : '#1A1A1A', transition: 'color 0.2s' }}>
+              <div className="text-[42px] md:text-[52px]" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 500, lineHeight: 1, color: statsLoading ? '#CCC' : '#1A1A1A', transition: 'color 0.2s' }}>
                 {statsLoading ? '—' : stats.draftsCount}
               </div>
               <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#888', marginTop: '8px' }}>
@@ -282,7 +303,7 @@ export default function Dashboard() {
               width: '44px', height: '44px', borderRadius: '50%',
               background: '#EEF4FF', border: '1px solid #C7D8FA',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
+              flexShrink: 0, marginLeft: 'auto',
             }}>
               <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#4A90E2' }}>mark_email_read</span>
             </div>
@@ -290,8 +311,8 @@ export default function Dashboard() {
         </section>}
 
         {/* ─── METRICS GRID (Dashboard tab only) ───────────────────────────────── */}
-        {activeTab === 'outreach' && <section style={{ paddingTop: '40px', paddingBottom: '48px', borderBottom: '1px solid #E8E6DD' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+        {activeTab === 'outreach' && <section className="border-b border-[#E8E6DD] pt-8 pb-8 md:pt-10 md:pb-12">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {[
               { value: stats.totalCampaigns, label: 'Prospects Analyzed' },
               { value: stats.generatedCount, label: 'Emails Generated' },
@@ -299,24 +320,17 @@ export default function Dashboard() {
             ].map((metric, i) => (
               <div
                 key={i}
+                className="px-6 py-5 md:px-7 md:py-6"
                 style={{
                   background: '#FFFFFF', border: '1px solid #E8E6DD',
-                  borderRadius: '12px', padding: '24px 28px',
+                  borderRadius: '12px',
                   display: 'flex', flexDirection: 'column', gap: '12px',
                   boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
                   transition: 'border-color 0.15s, box-shadow 0.15s',
                   cursor: 'default',
                 }}
-                onMouseEnter={e => {
-                  (e.currentTarget as HTMLDivElement).style.borderColor = '#C5C3BA';
-                  (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)';
-                }}
-                onMouseLeave={e => {
-                  (e.currentTarget as HTMLDivElement).style.borderColor = '#E8E6DD';
-                  (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)';
-                }}
               >
-                <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '48px', fontWeight: 500, lineHeight: 1, color: statsLoading ? '#CCC' : '#1A1A1A', transition: 'color 0.2s' }}>
+                <span className="text-[38px] md:text-[48px]" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 500, lineHeight: 1, color: statsLoading ? '#CCC' : '#1A1A1A', transition: 'color 0.2s' }}>
                   {statsLoading ? '—' : metric.value}
                 </span>
                 <span style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#888' }}>
@@ -328,7 +342,7 @@ export default function Dashboard() {
         </section>}
 
         {/* ─── MAIN TAB CONTENT ─────────────────────────────────────────────────── */}
-        <div style={{ paddingTop: activeTab === 'outreach' ? '48px' : '40px', paddingBottom: '80px', flex: 1 }}>
+        <div className={`flex-1 pb-16 md:pb-20 ${activeTab === 'outreach' ? 'pt-8 md:pt-12' : 'pt-8 md:pt-10'}`}>
           {activeTab === 'outreach' && (
             <OutreachForm
               gmailStatus={gmailStatus}
@@ -343,11 +357,14 @@ export default function Dashboard() {
           )}
           {activeTab === 'gmail' && (
             <div style={{ maxWidth: '720px' }}>
-              <div style={{
-                background: '#FFFFFF', border: '1px solid #E8E6DD',
-                borderRadius: '16px', padding: '40px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-              }}>
+              <div
+                className="p-6 sm:p-8 md:p-10"
+                style={{
+                  background: '#FFFFFF', border: '1px solid #E8E6DD',
+                  borderRadius: '16px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                }}
+              >
                 <div style={{ borderBottom: '1px solid #E8E6DD', paddingBottom: '28px', marginBottom: '28px' }}>
                   <div style={{
                     display: 'inline-flex', alignItems: 'center', gap: '6px',
@@ -358,7 +375,7 @@ export default function Dashboard() {
                     <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>mail</span>
                     Direct Gmail Drafts API
                   </div>
-                  <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '32px', fontWeight: 500, color: '#1A1A1A', marginBottom: '10px' }}>
+                  <h2 className="text-[26px] sm:text-[32px]" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 500, color: '#1A1A1A', marginBottom: '10px' }}>
                     Gmail Integration
                   </h2>
                   <p style={{ fontSize: '14px', lineHeight: 1.6, color: '#666' }}>
@@ -383,14 +400,17 @@ export default function Dashboard() {
                         : { bg: '#FFF1F2', text: '#9F1239', border: '#FECDD3' }
                     }
                   ].map((row, i) => (
-                    <div key={i} style={{
-                      background: '#F8F7F3', border: '1px solid #E8E6DD',
-                      borderRadius: '10px', padding: '16px 20px',
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px'
-                    }}>
-                      <div>
+                    <div
+                      key={i}
+                      className="flex flex-col items-start gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5"
+                      style={{
+                        background: '#F8F7F3', border: '1px solid #E8E6DD',
+                        borderRadius: '10px',
+                      }}
+                    >
+                      <div style={{ minWidth: 0, maxWidth: '100%' }}>
                         <p style={{ fontSize: '13px', fontWeight: 600, color: '#1A1A1A', marginBottom: '3px' }}>{row.label}</p>
-                        <p style={{ fontSize: '12px', color: '#666', fontFamily: i === 0 ? 'monospace' : 'inherit' }}>{row.value}</p>
+                        <p style={{ fontSize: '12px', color: '#666', fontFamily: i === 0 ? 'monospace' : 'inherit', overflowWrap: 'anywhere' }}>{row.value}</p>
                       </div>
                       <span style={{
                         fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em',
@@ -409,15 +429,14 @@ export default function Dashboard() {
                     onClick={handleConnectGmail}
                     style={{
                       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                      padding: '12px 24px', borderRadius: '9px', border: 'none',
+                      padding: '13px 20px', borderRadius: '9px', border: 'none',
                       fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
-                      color: '#FFFFFF', background: '#1A1A1A', cursor: 'pointer', transition: 'background 0.15s'
+                      color: '#FFFFFF', background: '#1A1A1A', cursor: 'pointer', transition: 'background 0.15s',
+                      minHeight: '44px', textAlign: 'center', lineHeight: 1.3,
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#333')}
-                    onMouseLeave={e => (e.currentTarget.style.background = '#1A1A1A')}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>sync</span>
-                    {gmailStatus.connected ? 'Reconnect / Reauthorize' : 'Connect Gmail Account'}
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px', flexShrink: 0 }}>sync</span>
+                    {gmailStatus.connected ? 'Reconnect' : 'Connect Gmail'}
                   </button>
                   <a
                     href="https://myaccount.google.com/permissions"
@@ -427,17 +446,10 @@ export default function Dashboard() {
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       width: '44px', height: '44px', borderRadius: '9px',
                       border: '1px solid #E8E6DD', color: '#666',
-                      background: '#FFFFFF', transition: 'all 0.15s', textDecoration: 'none'
+                      background: '#FFFFFF', transition: 'all 0.15s', textDecoration: 'none',
+                      flexShrink: 0,
                     }}
                     title="Manage Google Permissions"
-                    onMouseEnter={e => {
-                      (e.currentTarget as HTMLAnchorElement).style.background = '#F0EFE9';
-                      (e.currentTarget as HTMLAnchorElement).style.color = '#1A1A1A';
-                    }}
-                    onMouseLeave={e => {
-                      (e.currentTarget as HTMLAnchorElement).style.background = '#FFFFFF';
-                      (e.currentTarget as HTMLAnchorElement).style.color = '#666';
-                    }}
                   >
                     <IconArrowUpRight style={{ width: '18px', height: '18px' }} />
                   </a>

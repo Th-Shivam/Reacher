@@ -142,9 +142,10 @@ export const OutreachForm = ({ gmailStatus, onUpdateStats, showCreateModal, setS
 
   const cardStyle: React.CSSProperties = {
     background: '#FFFFFF', border: '1px solid #E8E6DD',
-    borderRadius: '14px', padding: '24px',
+    borderRadius: '14px', padding: '20px',
     display: 'flex', flexDirection: 'column', gap: '16px',
     boxShadow: '0 1px 4px rgba(0,0,0,0.04)', flex: 1,
+    minWidth: 0,
   };
 
   const labelStyle: React.CSSProperties = {
@@ -153,22 +154,24 @@ export const OutreachForm = ({ gmailStatus, onUpdateStats, showCreateModal, setS
   };
 
   const btnDark: React.CSSProperties = {
-    display: 'inline-flex', alignItems: 'center', gap: '6px',
-    padding: '7px 16px', borderRadius: '8px', border: 'none',
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+    padding: '10px 16px', borderRadius: '8px', border: 'none',
     fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
     background: '#1A1A1A', color: '#FFFFFF', cursor: 'pointer', transition: 'background 0.15s',
+    minHeight: '40px',
   };
 
   const btnOutline: React.CSSProperties = {
-    display: 'inline-flex', alignItems: 'center', gap: '6px',
-    padding: '6px 14px', borderRadius: '8px', border: '1px solid #E8E6DD',
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+    padding: '9px 14px', borderRadius: '8px', border: '1px solid #E8E6DD',
     fontSize: '11px', fontWeight: 600, color: '#555', cursor: 'pointer',
     background: 'transparent', transition: 'all 0.15s',
+    minHeight: '38px',
   };
 
   const inputStyle: React.CSSProperties = {
     width: '100%', background: '#F8F7F3', border: '1px solid #E8E6DD',
-    borderRadius: '9px', padding: '10px 14px',
+    borderRadius: '9px', padding: '11px 14px',
     fontSize: '13px', color: '#1A1A1A', outline: 'none',
     fontFamily: "'Lato', system-ui, sans-serif",
     transition: 'border-color 0.15s',
@@ -176,7 +179,7 @@ export const OutreachForm = ({ gmailStatus, onUpdateStats, showCreateModal, setS
   };
 
   const FallbackRow = ({ company, role, stage }: { company: string; role: string; stage: 'sent' | 'progress' }) => (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', alignItems: 'stretch' }}>
+    <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-3">
       {/* Research */}
       <div style={cardStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid #F0EFE9' }}>
@@ -251,7 +254,7 @@ export const OutreachForm = ({ gmailStatus, onUpdateStats, showCreateModal, setS
       )}
 
       {/* ─── Section Header ─── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h2 style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#1A1A1A', margin: 0 }}>Active Pipeline</h2>
           <p style={{ fontSize: '13px', color: '#888', marginTop: '4px' }}>
@@ -260,6 +263,7 @@ export const OutreachForm = ({ gmailStatus, onUpdateStats, showCreateModal, setS
         </div>
         <button
           onClick={() => setShowCreateModal ? setShowCreateModal(!showCreateModal) : undefined}
+          className="w-full sm:w-auto"
           style={btnDark}
         >
           <IconPlus style={{ width: '14px', height: '14px' }} />
@@ -269,14 +273,17 @@ export const OutreachForm = ({ gmailStatus, onUpdateStats, showCreateModal, setS
 
       {/* ─── Create New Flow Form ─── */}
       {(showCreateModal || campaigns.length === 0) && (
-        <div style={{
-          background: '#FFFFFF', border: '1px solid #E8E6DD',
-          borderRadius: '16px', padding: '32px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid #F0EFE9' }}>
+        <div
+          className="p-5 sm:p-7 md:p-8"
+          style={{
+            background: '#FFFFFF', border: '1px solid #E8E6DD',
+            borderRadius: '16px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid #F0EFE9', gap: '12px' }}>
             <div>
-              <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '26px', fontWeight: 500, color: '#1A1A1A', margin: 0 }}>
+              <h3 className="text-[22px] sm:text-[26px]" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 500, color: '#1A1A1A', margin: 0 }}>
                 Create New Prospect Flow
               </h3>
               <p style={{ fontSize: '13px', color: '#888', marginTop: '4px' }}>
@@ -284,14 +291,14 @@ export const OutreachForm = ({ gmailStatus, onUpdateStats, showCreateModal, setS
               </p>
             </div>
             {showCreateModal && setShowCreateModal && (
-              <button onClick={() => setShowCreateModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: '4px' }}>
+              <button onClick={() => setShowCreateModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: '4px', flexShrink: 0 }}>
                 <IconX style={{ width: '18px', height: '18px' }} />
               </button>
             )}
           </div>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
                 <label style={labelStyle}>Company Name *</label>
                 <input
@@ -329,8 +336,8 @@ export const OutreachForm = ({ gmailStatus, onUpdateStats, showCreateModal, setS
                 onBlur={e => (e.target.style.borderColor = '#E8E6DD')}
               />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '4px' }}>
-              <button type="submit" disabled={isSubmitting} style={{ ...btnDark, opacity: isSubmitting ? 0.6 : 1, padding: '10px 24px', fontSize: '12px' }}>
+            <div className="flex justify-stretch pt-1 sm:justify-end">
+              <button type="submit" disabled={isSubmitting} className="w-full sm:w-auto" style={{ ...btnDark, opacity: isSubmitting ? 0.6 : 1, padding: '12px 24px', fontSize: '12px' }}>
                 {isSubmitting ? 'Initializing...' : 'Start Prospect Pipeline'}
                 <IconArrowRight style={{ width: '14px', height: '14px' }} />
               </button>
@@ -355,24 +362,24 @@ export const OutreachForm = ({ gmailStatus, onUpdateStats, showCreateModal, setS
 
           return (
             <div key={c._id} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', alignItems: 'stretch' }}>
+              <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-3">
 
                 {/* Research — company-centric */}
                 <div style={cardStyle}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid #F0EFE9' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid #F0EFE9', gap: '8px' }}>
                     <span style={labelStyle}>01 · Research</span>
                     {isResearchComplete ? pill('✓ Completed', COMPLETED) : pill('Pending', PENDING)}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0 }}>
                     {/* Company initial badge */}
                     <div style={{ width: '44px', height: '44px', borderRadius: '10px', background: '#F0EFE9', border: '1px solid #E8E6DD', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '20px', fontWeight: 700, color: '#1A1A1A', lineHeight: 1 }}>
                         {c.company_name.charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <div>
-                      <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '22px', fontWeight: 600, color: '#1A1A1A', lineHeight: 1.15 }}>{c.company_name}</div>
-                      <div style={{ fontSize: '12px', color: '#888', marginTop: '3px', fontWeight: 500 }}>{targetRole}</div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '22px', fontWeight: 600, color: '#1A1A1A', lineHeight: 1.15, overflowWrap: 'anywhere' }}>{c.company_name}</div>
+                      <div style={{ fontSize: '12px', color: '#888', marginTop: '3px', fontWeight: 500, overflowWrap: 'anywhere' }}>{targetRole}</div>
                     </div>
                   </div>
 
@@ -433,7 +440,7 @@ export const OutreachForm = ({ gmailStatus, onUpdateStats, showCreateModal, setS
                       ? `"${c.job_description.slice(0, 110)}..."`
                       : '"Angle identified..."'}
                   </div>
-                  <div style={{ paddingTop: '12px', borderTop: '1px solid #F0EFE9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ paddingTop: '12px', borderTop: '1px solid #F0EFE9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <button
                       onClick={() => runStep(c._id, 'Generate Draft', 'generate-draft')}
                       disabled={Boolean(loadingActions[`${c._id}-Generate Draft`])}
@@ -495,14 +502,14 @@ export const OutreachForm = ({ gmailStatus, onUpdateStats, showCreateModal, setS
 
               {/* Expanded Draft */}
               {isExpanded && c.generated_draft && (
-                <div style={{ background: '#FFFFFF', border: '1px solid #E8E6DD', borderRadius: '14px', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '14px', borderBottom: '1px solid #F0EFE9' }}>
+                <div className="p-5 sm:p-6" style={{ background: '#FFFFFF', border: '1px solid #E8E6DD', borderRadius: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '14px', borderBottom: '1px solid #F0EFE9', gap: '8px', flexWrap: 'wrap' }}>
                     <span style={labelStyle}>Generated Outreach Email</span>
                     <button onClick={() => { navigator.clipboard.writeText(c.generated_draft || ''); setMessage('Copied!'); }} style={{ ...btnOutline, color: '#2563EB', border: 'none', fontSize: '11px' }}>
                       Copy Text
                     </button>
                   </div>
-                  <pre style={{ fontFamily: "'Lato', system-ui, sans-serif", fontSize: '13px', lineHeight: 1.7, color: '#1A1A1A', whiteSpace: 'pre-wrap', margin: 0 }}>
+                  <pre style={{ fontFamily: "'Lato', system-ui, sans-serif", fontSize: '13px', lineHeight: 1.7, color: '#1A1A1A', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', margin: 0 }}>
                     {c.generated_draft}
                   </pre>
                 </div>

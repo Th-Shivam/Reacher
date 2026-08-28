@@ -22,12 +22,11 @@ export default function FloatingDockDemo({
 
   const links: DockItem[] = [
     {
-      title: "Home (Scene 1)",
+      title: "Home",
       icon: (
         <IconHome
-          className={`h-full w-full ${
-            activeScene === "scene1" ? "text-indigo-400" : "text-neutral-500 dark:text-neutral-300"
-          }`}
+          className={`h-full w-full ${activeScene === "scene1" ? "text-white" : "text-white/50"
+            }`}
         />
       ),
       onClick: () => {
@@ -36,12 +35,11 @@ export default function FloatingDockDemo({
       },
     },
     {
-      title: "Explore (Scene 2)",
+      title: "Explore",
       icon: (
         <IconSparkles
-          className={`h-full w-full ${
-            activeScene === "scene2" ? "text-indigo-400" : "text-neutral-500 dark:text-neutral-300"
-          }`}
+          className={`h-full w-full ${activeScene === "scene2" ? "text-white" : "text-white/50"
+            }`}
         />
       ),
       onClick: () => {
@@ -51,28 +49,28 @@ export default function FloatingDockDemo({
     {
       title: "Sign In",
       icon: (
-        <IconLogin className="h-full w-full text-indigo-400 dark:text-indigo-400" />
+        <IconLogin className="h-full w-full text-white" />
       ),
       onClick: () => navigate("/sign-in"),
     },
     {
       title: "Get Started",
       icon: (
-        <IconUserPlus className="h-full w-full text-purple-400 dark:text-purple-400" />
+        <IconUserPlus className="h-full w-full text-white" />
       ),
       onClick: () => navigate("/sign-up"),
     },
     {
       title: "Twitter",
       icon: (
-        <IconBrandX className="h-full w-full text-neutral-500 dark:text-neutral-300" />
+        <IconBrandX className="h-full w-full text-white" />
       ),
       href: "https://x.com",
     },
     {
       title: "GitHub",
       icon: (
-        <IconBrandGithub className="h-full w-full text-neutral-500 dark:text-neutral-300" />
+        <IconBrandGithub className="h-full w-full text-white" />
       ),
       href: "https://github.com",
     },
