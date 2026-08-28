@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>REACHER - Editorial Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&amp;family=Lato:wght@300;400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#5f3add",
+                        "text-primary": "#1A1A1A",
+                        "text-secondary": "#555555",
+                        "background": "#FDFCF8",
+                        "surface-hover": "#F5F4EF",
+                        "border-subtle": "#EBE9E0",
+                        "sync-blue": "#4A90E2"
+                    },
+                    "fontFamily": {
+                        "serif": ["'Cormorant Garamond'", "serif"],
+                        "sans": ["Lato", "sans-serif"]
+                    },
+                    animation: {
+                        'spin-slow': 'spin 3s linear infinite',
+                        'pulse-sync': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #FDFCF8;
+            color: #1A1A1A;
+        }
+        .pipeline-card {
+            transition: all 0.3s ease;
+        }
+        .pipeline-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+        .flow-line {
+            position: absolute;
+            top: 50%;
+            left: 100%;
+            width: 2rem;
+            height: 1px;
+            background: #EBE9E0;
+            z-index: 0;
+        }
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-sent { background-color: #1A1A1A; }
+        .status-syncing { background-color: #4A90E2; }
+    </style>
+</head>
+<body class="font-sans antialiased overflow-x-hidden selection:bg-gray-200 selection:text-black">
+<!-- Floating Navigation Dock -->
+<nav class="fixed left-8 top-1/2 -translate-y-1/2 hidden md:flex flex-col gap-10 py-10 px-4 rounded-full bg-[#FDFCF8]/70 backdrop-blur-md border border-border-subtle z-50 shadow-sm">
+<a aria-label="Dashboard" class="text-text-secondary hover:text-text-primary transition-colors flex justify-center group relative" href="#">
+<span class="material-symbols-outlined text-2xl">space_dashboard</span>
+<span class="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-2 py-1 bg-text-primary text-background text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap rounded-sm">Dashboard</span>
+</a>
+<a aria-label="Profile" class="text-text-secondary hover:text-text-primary transition-colors flex justify-center group relative" href="#">
+<span class="material-symbols-outlined text-2xl">person</span>
+<span class="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-2 py-1 bg-text-primary text-background text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap rounded-sm">Profile</span>
+</a>
+<a aria-label="Settings" class="text-text-secondary hover:text-text-primary transition-colors flex justify-center group relative" href="#">
+<span class="material-symbols-outlined text-2xl">settings</span>
+<span class="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-2 py-1 bg-text-primary text-background text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap rounded-sm">Settings</span>
+</a>
+</nav>
+<!-- Main Content Area -->
+<main class="w-full min-h-screen flex flex-col pt-24 pb-32 px-8 pl-8 md:pl-32 max-w-7xl mx-auto">
+<div class="w-full flex flex-col gap-16">
+<!-- Header & Stats at a Glance -->
+<header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 border-b border-border-subtle pb-8">
+<div class="flex flex-col gap-2">
+<div class="flex items-center gap-3">
+<span class="text-xs font-sans font-bold uppercase tracking-[0.2em] text-text-secondary">Pipeline Overview</span>
+<div class="flex items-center gap-1 text-[10px] bg-green-50 text-green-700 px-2 py-1 rounded-full font-bold uppercase tracking-wider">
+<span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                                System Active
+                            </div>
+</div>
+<h1 class="font-serif text-5xl font-medium tracking-tight text-text-primary leading-tight">
+            Automation Flow
+        </h1>
+<p class="text-text-secondary text-sm max-w-md mt-2 leading-relaxed">
+            Powered by Google ADK Integration. Seamlessly analyzing prospects and saving highly targeted messages directly to your Gmail drafts via Automatic Personalization.
+        </p>
+</div>
+<!-- Primary Metric Highlight -->
+<div class="bg-surface-hover border border-border-subtle p-6 rounded-lg flex items-center gap-6 pipeline-card">
+<div class="flex flex-col">
+<span class="text-[10px] font-sans font-bold uppercase tracking-[0.15em] text-sync-blue mb-1">Success Metric</span>
+<span class="font-serif text-5xl text-text-primary italic">64</span>
+<span class="text-[12px] font-sans font-bold uppercase tracking-[0.15em] text-text-primary mt-1">Gmail Drafts Saved</span>
+</div>
+<div class="w-12 h-12 rounded-full bg-white flex items-center justify-center border border-border-subtle shadow-sm">
+<span class="material-symbols-outlined text-sync-blue text-2xl animate-pulse-sync">sync</span>
+</div>
+</div>
+</header>
+<!-- Stats Overview -->
+<div class="w-full grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="flex flex-col gap-2 p-6 border border-border-subtle bg-white rounded-md">
+<span class="font-serif text-4xl text-text-primary">120</span>
+<span class="text-[10px] font-sans font-bold uppercase tracking-[0.15em] text-text-secondary">Prospects Analyzed</span>
+</div>
+<div class="flex flex-col gap-2 p-6 border border-border-subtle bg-white rounded-md">
+<span class="font-serif text-4xl text-text-primary">86</span>
+<span class="text-[10px] font-sans font-bold uppercase tracking-[0.15em] text-text-secondary">Emails Generated</span>
+</div>
+<div class="flex flex-col gap-2 p-6 border border-border-subtle bg-sync-blue/5 rounded-md relative overflow-hidden">
+<div class="absolute inset-0 bg-sync-blue/10 animate-pulse-sync opacity-50"></div>
+<span class="font-serif text-4xl text-text-primary relative z-10">64</span>
+<span class="text-[10px] font-sans font-bold uppercase tracking-[0.15em] text-sync-blue relative z-10">Synced to Gmail</span>
+</div>
+<div class="flex flex-col gap-2 p-6 border border-border-subtle bg-white rounded-md">
+<span class="font-serif text-4xl text-text-primary">32</span>
+<span class="text-[10px] font-sans font-bold uppercase tracking-[0.15em] text-text-secondary">Sent Successfully</span>
+</div>
+</div>
+<!-- Active Pipeline Flow -->
+<section class="flex flex-col gap-8 mt-8">
+<div class="flex items-center justify-between border-b border-border-subtle pb-4">
+<h2 class="font-serif text-3xl text-text-primary italic">Active Pipeline</h2>
+<button class="flex items-center gap-2 text-[10px] font-sans font-bold uppercase tracking-[0.15em] text-text-primary border border-border-subtle px-4 py-2 hover:bg-surface-hover transition-colors rounded-sm">
+<span class="material-symbols-outlined text-[14px]">add</span>
+                    New Flow
+                </button>
+</div>
+<div class="flex flex-col gap-8">
+<!-- Pipeline Row 1 (Complete) -->
+<div class="flex flex-col md:flex-row items-center gap-4 relative">
+<!-- Phase 1: Research -->
+<div class="pipeline-card w-full md:w-1/3 bg-white border border-border-subtle p-6 rounded-md relative z-10 flex flex-col gap-4">
+<div class="flex items-center justify-between border-b border-border-subtle pb-3">
+<span class="text-[10px] font-sans font-bold uppercase tracking-[0.1em] text-text-secondary">1. Research</span>
+<span class="material-symbols-outlined text-[14px] text-green-600">check_circle</span>
+</div>
+<div class="flex items-center gap-4">
+<img alt="Alex Thompson" class="w-12 h-12 rounded-full object-cover grayscale" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBZI8sK5-jrYblUVjbvFCjGDHllBK4DEozfmpLZm9yATHPrzXhhZonw_mHyU7yo4ZA8LfDzx99peXctZAABfHvh9GP6E6FFRqCtLp8sKq4nw5DcehMplOscU3vJtiseFme-YZGuCvaafKMuKQDDTd_t8MczfQlkwqhrZF-i-tN3Ej4y26KJsjztUy54Q1UFsKzXr07zOzyqh2tkJlVpVObNid8A8f19n-ixK-EjNb5I5bWSoz-Int3"/>
+<div class="flex flex-col">
+<span class="font-serif text-xl text-text-primary">Alex Thompson</span>
+<span class="text-[10px] font-sans text-text-secondary uppercase tracking-wider">Linear</span>
+</div>
+</div>
+</div>
+<!-- Connector -->
+<div class="hidden md:flex flex-1 items-center justify-center">
+<div class="h-px w-full bg-border-subtle relative">
+<div class="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-border-subtle"></div>
+</div>
+</div>
+<!-- Phase 2: Generation -->
+<div class="pipeline-card w-full md:w-1/3 bg-white border border-border-subtle p-6 rounded-md relative z-10 flex flex-col gap-4">
+<div class="flex items-center justify-between border-b border-border-subtle pb-3">
+<span class="text-[10px] font-sans font-bold uppercase tracking-[0.1em] text-text-secondary">2. Generate</span>
+<span class="material-symbols-outlined text-[14px] text-green-600">check_circle</span>
+</div>
+<div class="text-sm font-serif italic text-text-secondary line-clamp-2">
+                            "Angle identified: Blog post on scaling design systems..."
+                        </div>
+</div>
+<!-- Connector -->
+<div class="hidden md:flex flex-1 items-center justify-center">
+<div class="h-px w-full bg-border-subtle relative">
+<div class="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-border-subtle"></div>
+</div>
+</div>
+<!-- Phase 3: Sync -->
+<div class="pipeline-card w-full md:w-1/3 bg-surface-hover border border-text-primary p-6 rounded-md relative z-10 flex flex-col gap-4 shadow-sm">
+<div class="flex items-center justify-between border-b border-border-subtle pb-3">
+<span class="text-[10px] font-sans font-bold uppercase tracking-[0.1em] text-text-primary">3. Gmail Sync</span>
+<span class="material-symbols-outlined text-[16px] text-text-primary">mark_email_read</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-xs font-sans font-medium text-text-primary">Status: Sent</span>
+<span class="text-[10px] text-text-secondary">2 hours ago</span>
+</div>
+</div>
+</div>
+<!-- Pipeline Row 2 (Syncing) -->
+<div class="flex flex-col md:flex-row items-center gap-4 relative">
+<!-- Phase 1: Research -->
+<div class="pipeline-card w-full md:w-1/3 bg-white border border-border-subtle p-6 rounded-md relative z-10 flex flex-col gap-4">
+<div class="flex items-center justify-between border-b border-border-subtle pb-3">
+<span class="text-[10px] font-sans font-bold uppercase tracking-[0.1em] text-text-secondary">1. Research</span>
+<span class="material-symbols-outlined text-[14px] text-green-600">check_circle</span>
+</div>
+<div class="flex items-center gap-4">
+<img alt="Sarah Johnson" class="w-12 h-12 rounded-full object-cover grayscale" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyT3VWJPLYK5kpX6A1dpKqO_IpB9NSivPLrfHK3rnARXfYDFVGkxHAzo9ERyYcEFVpy_-8eXfl_7ceAVjbuEJB5g-fBEXEJ9yW82uVnoVccgTAGW0-3pIh61Kn4SwWfxS4WJVm5EsoFxhTSkNjm2Y6yIp6L0-MH6ueGAjgLiHtLVNb6WMG70YbJnrNrO6zrTKRiuhtOKXnEV0YFv3pymHeWbLcjBOAbq0OlWkLlf3yBgUQYcxZmycS"/>
+<div class="flex flex-col">
+<span class="font-serif text-xl text-text-primary">Sarah Johnson</span>
+<span class="text-[10px] font-sans text-text-secondary uppercase tracking-wider">OpenAI</span>
+</div>
+</div>
+</div>
+<!-- Connector -->
+<div class="hidden md:flex flex-1 items-center justify-center">
+<div class="h-px w-full bg-border-subtle relative">
+<div class="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-border-subtle"></div>
+</div>
+</div>
+<!-- Phase 2: Generation -->
+<div class="pipeline-card w-full md:w-1/3 bg-white border border-border-subtle p-6 rounded-md relative z-10 flex flex-col gap-4">
+<div class="flex items-center justify-between border-b border-border-subtle pb-3">
+<span class="text-[10px] font-sans font-bold uppercase tracking-[0.1em] text-text-secondary">2. Generate</span>
+<span class="material-symbols-outlined text-[14px] text-green-600">check_circle</span>
+</div>
+<div class="text-sm font-serif italic text-text-secondary line-clamp-2">
+                            "Angle identified: Speaking at SaaS Marketing Summit..."
+                        </div>
+</div>
+<!-- Connector -->
+<div class="hidden md:flex flex-1 items-center justify-center">
+<div class="h-px w-full bg-sync-blue/30 relative">
+<div class="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-sync-blue animate-pulse"></div>
+</div>
+</div>
+<!-- Phase 3: Sync -->
+<div class="pipeline-card w-full md:w-1/3 bg-sync-blue/5 border border-sync-blue/30 p-6 rounded-md relative z-10 flex flex-col gap-4">
+<div class="flex items-center justify-between border-b border-sync-blue/20 pb-3">
+<span class="text-[10px] font-sans font-bold uppercase tracking-[0.1em] text-sync-blue">3. Gmail Sync</span>
+<span class="material-symbols-outlined text-[16px] text-sync-blue animate-spin-slow">sync</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="status-dot status-syncing animate-pulse"></span>
+<span class="text-xs font-sans font-medium text-sync-blue">Saving to Drafts</span>
+</div>
+<span class="text-[10px] text-text-secondary">In progress</span>
+</div>
+</div>
+</div>
+<!-- Pipeline Row 3 (Complete) -->
+<div class="flex flex-col md:flex-row items-center gap-4 relative">
+<!-- Phase 1: Research -->
+<div class="pipeline-card w-full md:w-1/3 bg-white border border-border-subtle p-6 rounded-md relative z-10 flex flex-col gap-4">
+<div class="flex items-center justify-between border-b border-border-subtle pb-3">
+<span class="text-[10px] font-sans font-bold uppercase tracking-[0.1em] text-text-secondary">1. Research</span>
+<span class="material-symbols-outlined text-[14px] text-green-600">check_circle</span>
+</div>
+<div class="flex items-center gap-4">
+<img alt="Mike Chen" class="w-12 h-12 rounded-full object-cover grayscale" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDutWD1w2VXeo8LQWZRhOcGCVw5mw5xNOfEgxZaZnwcKPNPACXbulEpUGGObNtfNsb3brlCCMtSb4pIr8Nj71cKubbzGa74Km4I3I51fLZBDdV5ZCRVPcYtNgrYzBGVAPIQ4Rsf5Vk9A6NsbN04lTmvLfXwc_VP2XA8Nh8MxjCJr5k4EJI0WeItKxgxxNS9RsKBBTCCchZD-M5LEBWWKEbb4R1KPkqqa1egK03HNfI1oF1Vs5tZc4sc"/>
+<div class="flex flex-col">
+<span class="font-serif text-xl text-text-primary">Mike Chen</span>
+<span class="text-[10px] font-sans text-text-secondary uppercase tracking-wider">Stripe</span>
+</div>
+</div>
+</div>
+<!-- Connector -->
+<div class="hidden md:flex flex-1 items-center justify-center">
+<div class="h-px w-full bg-border-subtle relative">
+<div class="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-border-subtle"></div>
+</div>
+</div>
+<!-- Phase 2: Generation -->
+<div class="pipeline-card w-full md:w-1/3 bg-white border border-border-subtle p-6 rounded-md relative z-10 flex flex-col gap-4">
+<div class="flex items-center justify-between border-b border-border-subtle pb-3">
+<span class="text-[10px] font-sans font-bold uppercase tracking-[0.1em] text-text-secondary">2. Generate</span>
+<span class="material-symbols-outlined text-[14px] text-green-600">check_circle</span>
+</div>
+<div class="text-sm font-serif italic text-text-secondary line-clamp-2">
+                            "Angle identified: New payment API feature rollout..."
+                        </div>
+</div>
+<!-- Connector -->
+<div class="hidden md:flex flex-1 items-center justify-center">
+<div class="h-px w-full bg-border-subtle relative">
+<div class="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-border-subtle"></div>
+</div>
+</div>
+<!-- Phase 3: Sync -->
+<div class="pipeline-card w-full md:w-1/3 bg-surface-hover border border-text-primary p-6 rounded-md relative z-10 flex flex-col gap-4 shadow-sm">
+<div class="flex items-center justify-between border-b border-border-subtle pb-3">
+<span class="text-[10px] font-sans font-bold uppercase tracking-[0.1em] text-text-primary">3. Gmail Sync</span>
+<span class="material-symbols-outlined text-[16px] text-text-primary">mark_email_read</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-xs font-sans font-medium text-text-primary">Status: Sent</span>
+<span class="text-[10px] text-text-secondary">Yesterday</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+</body></html>

@@ -1,54 +1,64 @@
 import './App.css'
 import {
   Show,
-  SignInButton,
-  SignUpButton,
-  UserButton,
   useAuth,
 } from '@clerk/react'
-import ProfileForm from './components/ProfileForm'
-import { OutreachForm } from './components/OutreachForm'
+import { useEffect } from 'react'
+import { Routes, Route } from 'react-router'
+import LandingPage from './components/LandingPage'
+import SignInPage from './components/SignInPage'
+import SignUpPage from './components/SignUpPage'
+import Dashboard from './components/Dashboard'
+
 function App() {
-  const { getToken } = useAuth()
+  const { isSignedIn, isLoaded, getToken } = useAuth()
 
-  const testBackend = async () => {
-    try {
-      const token = await getToken()
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return
 
-      const response = await fetch('http://localhost:8000/api/me', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+    const syncUser = async () => {
+      try {
+        const token = await getToken()
+        if (!token) return
 
-      const data = await response.json()
-
-      console.log('Backend response:', data)
-    } catch (error) {
-      console.error('Backend error:', error)
+        await fetch('http://localhost:8000/api/me', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+      } catch (error) {
+        console.error('User sync error:', error)
+      }
     }
-  }
+
+    syncUser()
+  }, [isSignedIn, isLoaded, getToken])
 
   return (
-    <>
-      <header>
-        <Show when="signed-out">
-          <SignInButton />
-          <SignUpButton />
-        </Show>
+    <Routes>
+      <Route
+        path="/sign-in/*"
+        element={<SignInPage />}
+      />
+      <Route
+        path="/sign-up/*"
+        element={<SignUpPage />}
+      />
+      <Route
+        path="*"
+        element={
+          <>
+            <Show when="signed-out">
+              <LandingPage />
+            </Show>
 
-        <Show when="signed-in">
-          <UserButton />
-
-          <button onClick={testBackend}>
-            Test Backend
-          </button>
-          
-          <ProfileForm />
-          <OutreachForm />
-        </Show>
-      </header>
-    </>
+            <Show when="signed-in">
+              <Dashboard />
+            </Show>
+          </>
+        }
+      />
+    </Routes>
   )
 }
 

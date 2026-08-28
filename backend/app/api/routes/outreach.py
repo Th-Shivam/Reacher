@@ -1,28 +1,39 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from typing import List
+from pydantic import BaseModel
 import json
 # pyrefly: ignore [missing-import]
 from bson import ObjectId
 from app.api.dependencies import get_current_user
 from app.schemas.outreach import OutreachCreate, OutreachInDB
 from app.services import outreach as outreach_service
+from app.services.gmail import create_gmail_draft
+from app.services.pipeline import run_full_pipeline
 from app.db.mongodb import outreach_collection, candidate_profiles_collection
 # pyrefly: ignore [missing-import]
 from app.agents.jd_analyzer import JDAnalyzerAgent
 from app.agents.candidate_analyzer import CandidateAnalyzerAgent
 from app.agents.outreach_writer import OutreachWriterAgent
+from app.agents.research_agent import ResearchAgent
+from app.agents.reviewer_agent import ReviewerAgent
 
 router = APIRouter()
 
 @router.post("", response_model=OutreachInDB)
 async def create_campaign(
     outreach: OutreachCreate,
-    user_id: str = Depends(get_current_user)
+    background_tasks: BackgroundTasks,
+    user_id: str = Depends(get_current_user),
 ):
     """
-    Create a new outreach campaign (Target Job + Company)
+    Create a new outreach campaign and immediately start the full
+    automated pipeline in the background.
     """
-    return await outreach_service.create_outreach_campaign(user_id, outreach)
+    campaign = await outreach_service.create_outreach_campaign(user_id, outreach)
+    # Fire-and-forget: full pipeline runs asynchronously
+    background_tasks.add_task(run_full_pipeline, campaign["_id"], user_id)
+    return campaign
+
 
 @router.get("", response_model=List[OutreachInDB])
 async def list_campaigns(user_id: str = Depends(get_current_user)):
@@ -150,6 +161,52 @@ async def analyze_candidate_profile(campaign_id: str, user_id: str = Depends(get
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Candidate Analysis Failed: {str(e)}")
 
+@router.post("/{campaign_id}/research-company")
+async def research_company(campaign_id: str, user_id: str = Depends(get_current_user)):
+    """
+    Researches the company using the ResearchAgent (Tool Use).
+    """
+    try:
+        campaign = await outreach_collection.find_one({"_id": ObjectId(campaign_id), "clerk_id": user_id})
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid Campaign ID")
+        
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+
+    # Optimization: If we already have the research, don't run AI again
+    if campaign.get("company_research"):
+        return {
+            "status": "success",
+            "campaign_id": campaign_id,
+            "research": campaign["company_research"],
+            "cached": True
+        }
+
+    try:
+        agent = ResearchAgent()
+    except ValueError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    try:
+        research_data = agent.research(campaign["company_name"])
+        
+        await outreach_collection.update_one(
+            {"_id": ObjectId(campaign_id)},
+            {"$set": {
+                "company_research": research_data,
+                "status": "company_researched"
+            }}
+        )
+        
+        return {
+            "status": "success",
+            "campaign_id": campaign_id,
+            "research": research_data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Company Research Failed: {str(e)}")
+
 @router.post("/{campaign_id}/generate-draft")
 async def generate_outreach_draft(campaign_id: str, user_id: str = Depends(get_current_user)):
     """
@@ -165,11 +222,12 @@ async def generate_outreach_draft(campaign_id: str, user_id: str = Depends(get_c
 
     jd_analysis = campaign.get("jd_analysis")
     candidate_analysis = campaign.get("candidate_analysis")
+    company_research = campaign.get("company_research")
     
-    if not jd_analysis or not candidate_analysis:
+    if not jd_analysis or not candidate_analysis or not company_research:
         raise HTTPException(
             status_code=400, 
-            detail="Missing analysis data. Please analyze both JD and Candidate first."
+            detail="Missing analysis data. Please analyze JD, Candidate, and Research the Company first."
         )
 
     # Optimization: if draft exists, just return it
@@ -185,11 +243,28 @@ async def generate_outreach_draft(campaign_id: str, user_id: str = Depends(get_c
         agent = OutreachWriterAgent()
     except ValueError as e:
         raise HTTPException(status_code=500, detail=str(e))
+        
+    # Fetch user profile to provide contact info
+    user_profile = await candidate_profiles_collection.find_one({"clerk_id": user_id})
+    profile_data = {}
+    if user_profile:
+        # Exclude internal DB IDs to keep prompt clean
+        profile_data = {
+            "name": user_profile.get("name", ""),
+            "email": user_profile.get("email", ""),
+            "phone": user_profile.get("phone", ""),
+            "github_url": user_profile.get("github", ""),
+            "linkedin_url": user_profile.get("linkedin", ""),
+            "x_url": user_profile.get("x_url", "")
+        }
 
     try:
         draft = agent.write(
             json.dumps(jd_analysis),
-            json.dumps(candidate_analysis)
+            json.dumps(candidate_analysis),
+            profile_data,
+            campaign.get("company_name", "the company"),
+            company_research
         )
         
         await outreach_collection.update_one(
@@ -207,3 +282,57 @@ async def generate_outreach_draft(campaign_id: str, user_id: str = Depends(get_c
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Draft Generation Failed: {str(e)}")
+
+@router.post("/{campaign_id}/review-draft")
+async def review_outreach_draft(campaign_id: str, user_id: str = Depends(get_current_user)):
+    """
+    Evaluates the generated email draft using the ReviewerAgent.
+    """
+    try:
+        campaign = await outreach_collection.find_one({"_id": ObjectId(campaign_id), "clerk_id": user_id})
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid Campaign ID")
+        
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+
+    draft = campaign.get("generated_draft")
+    jd = campaign.get("job_description")
+    
+    if not draft:
+        raise HTTPException(status_code=400, detail="No draft found to review. Generate a draft first.")
+
+    # Optimization: if review exists, just return it
+    if campaign.get("draft_review"):
+        return {
+            "status": "success",
+            "campaign_id": campaign_id,
+            "review": campaign["draft_review"],
+            "cached": True
+        }
+
+    try:
+        agent = ReviewerAgent()
+    except ValueError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    try:
+        raw_review = agent.review(jd, draft)
+        clean_json = raw_review.replace("```json", "").replace("```", "").strip()
+        review_data = json.loads(clean_json)
+        
+        await outreach_collection.update_one(
+            {"_id": ObjectId(campaign_id)},
+            {"$set": {
+                "draft_review": review_data,
+                "status": "draft_reviewed"
+            }}
+        )
+        
+        return {
+            "status": "success",
+            "campaign_id": campaign_id,
+            "review": review_data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Draft Review Failed: {str(e)}")

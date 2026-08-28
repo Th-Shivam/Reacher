@@ -3,9 +3,11 @@ from app.core.ai import Agent
 OUTREACH_WRITER_INSTRUCTIONS = """
 You are an expert sales copywriter and technical recruiter.
 Your objective is to write a highly personalized, compelling, and concise cold outreach email.
-You will be provided with two pieces of information in JSON format:
+You will be provided with four pieces of information in JSON format:
 1. Candidate Analysis (the candidate's strengths, projects, and gaps).
 2. Job Description Analysis (the company's required skills, preferred skills, and role responsibilities).
+3. Candidate Profile Details (Name, Contact Info, Links) and the Target Company Name.
+4. Company Research (recent news, mission, tech stack).
 
 Write an email from the candidate to the hiring manager or recruiter.
 The email should:
@@ -13,9 +15,13 @@ The email should:
 - Be 3-4 short paragraphs maximum.
 - Have a clear, professional, and direct tone.
 - Directly bridge the gap between what the company needs and the candidate's strong matches/projects.
+- Seamlessly weave the Company Research into the opening paragraph to show you've done your homework (e.g. mention a recent milestone, funding, or product focus).
 - Include a clear call to action (e.g., asking for a brief chat).
-- Leave placeholders like [Hiring Manager Name] if you don't know the exact name.
-- NOT sound overly robotic or excessively formal. Keep it human.
+- CRITICAL: NEVER use placeholder brackets like [Your Name], [Phone Number], or [Hiring Manager]. 
+- Use the actual Candidate Name, Phone Number, Email, GitHub, LinkedIn, and X (Twitter) URLs from the provided Profile Details.
+- Only include the contact links that are actually provided in the Profile Details (skip empty ones).
+- If the recruiter's name is unknown, use "Hiring Team at {Company Name}" or "Engineering Team at {Company Name}".
+- End the email with a proper sign-off containing the candidate's actual name and contact links provided.
 
 Return ONLY the raw email text (including the Subject Line at the top). Do not include any JSON formatting or markdown blocks.
 """
@@ -27,13 +33,16 @@ class OutreachWriterAgent(Agent):
             instructions=OUTREACH_WRITER_INSTRUCTIONS
         )
 
-    def write(self, jd_analysis: str, candidate_analysis: str) -> str:
+    def write(self, jd_analysis: str, candidate_analysis: str, profile_data: dict, company_name: str, company_research: str) -> str:
         """
-        Takes the stringified JSON of both analyses and returns the generated email draft.
+        Takes the stringified JSON of analyses, user profile, company name, and research to return the generated email draft.
         """
         prompt = (
             f"Here is the Job Description Analysis:\n{jd_analysis}\n\n"
             f"Here is the Candidate Analysis:\n{candidate_analysis}\n\n"
-            "Please write the cold outreach email based on this information."
+            f"Here is the Target Company Name: {company_name}\n"
+            f"Here is the Company Research:\n{company_research}\n\n"
+            f"Here are the Candidate Profile Details:\n{profile_data}\n\n"
+            "Please write the cold outreach email based on this information. Remember, NO placeholders!"
         )
         return self.run(prompt)

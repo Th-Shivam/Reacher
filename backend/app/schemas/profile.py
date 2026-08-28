@@ -8,6 +8,11 @@ class CandidateProfileBase(BaseModel):
     projects: List[str] = Field(default_factory=list, description="List of notable projects")
     experience: List[str] = Field(default_factory=list, description="List of work experiences")
     education: List[str] = Field(default_factory=list, description="List of educational background")
+    phone: Optional[str] = Field(default="", description="Phone number")
+    email: Optional[str] = Field(default="", description="Contact email")
+    github: Optional[str] = Field(default="", description="GitHub profile URL")
+    linkedin: Optional[str] = Field(default="", description="LinkedIn profile URL")
+    x_url: Optional[str] = Field(default="", description="X (Twitter) profile URL")
     resume: Optional[dict] = Field(default=None, description="Resume file metadata")
 
 class CandidateProfileCreate(CandidateProfileBase):

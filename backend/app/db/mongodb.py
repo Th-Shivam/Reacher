@@ -15,6 +15,7 @@ database = client[MONGODB_DATABASE]
 
 async def ping_database() -> bool:
     await client.admin.command("ping")
+    await users_collection.create_index("clerk_id", unique=True)
     return True
 
 users_collection = database["users"]
