@@ -11,7 +11,7 @@ def get_current_user(request: Request) -> str:
     request_state = clerk.authenticate_request(
         request,
         AuthenticateRequestOptions(
-            authorized_parties=["http://localhost:5173"],
+            authorized_parties=["http://localhost:5173", "https://reacher-tawny.vercel.app"],
             accepts_token=["session_token"],
         ),
     )
