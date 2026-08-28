@@ -19,6 +19,9 @@ class OutreachInDB(OutreachBase):
     company_research: Optional[str] = None
     generated_draft: Optional[str] = None
     draft_review: Optional[dict] = None
+    is_saved_in_drafts: Optional[bool] = Field(default=False, description="Whether the draft has been saved to Gmail Drafts")
+    pipeline_status: Optional[str] = Field(default="pending", description="Current automated pipeline step")
+    pipeline_error: Optional[str] = Field(default=None, description="Error message if pipeline step failed")
     created_at: datetime
     updated_at: datetime
 
