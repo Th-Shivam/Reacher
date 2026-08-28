@@ -17,7 +17,14 @@ app = FastAPI(title="Reacher API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://reacher-tawny.vercel.app"],
+    allow_origins=[
+        "https://reacher-tawny.vercel.app",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    # Vercel preview deployments get per-commit and per-branch hostnames,
+    # e.g. reacher-tawny-<hash>-<scope>.vercel.app
+    allow_origin_regex=r"https://reacher-tawny-[a-z0-9-]+\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
