@@ -1,5 +1,17 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Lato:wght@300;400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
+
+@theme {
+  --font-serif: 'Cormorant Garamond', serif;
+  --font-sans: 'Lato', sans-serif;
+  --color-primary: #5f3add;
+  --color-text-primary: #1A1A1A;
+  --color-text-secondary: #555555;
+  --color-background-custom: #FDFCF8;
+  --color-surface-hover: #F5F4EF;
+  --color-border-subtle: #EBE9E0;
+  --color-sync-blue: #4A90E2;
+}
 
 * {
   margin: 0;
@@ -8,16 +20,49 @@
 }
 
 :root {
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  color-scheme: dark;
+  font-family: 'Lato', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 }
 
 body {
   min-width: 320px;
   min-height: 100vh;
-  background-color: #0b0f19;
-  color: #f3f4f6;
+  background-color: #FDFCF8;
+  color: #1A1A1A;
   overflow-x: hidden;
+}
+
+.pipeline-card {
+  transition: all 0.3s ease;
+}
+.pipeline-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.status-sent { background-color: #1A1A1A; }
+.status-syncing { background-color: #4A90E2; }
+
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spinSlow 3s linear infinite;
+}
+
+@keyframes pulseSync {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-pulse-sync {
+  animation: pulseSync 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .landing-container {
