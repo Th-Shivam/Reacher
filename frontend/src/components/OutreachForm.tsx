@@ -62,7 +62,7 @@ export const OutreachForm = ({ gmailStatus, onUpdateStats, showCreateModal, setS
   const fetchCampaigns = async () => {
     try {
       const token = await getToken();
-      const res = await fetch('http://localhost:8000/api/outreach', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/outreach`, { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) { setCampaigns(await res.json()); if (onUpdateStats) onUpdateStats(); }
     } catch (e) { console.error(e); }
   };
@@ -84,7 +84,7 @@ export const OutreachForm = ({ gmailStatus, onUpdateStats, showCreateModal, setS
     setMessage(''); setError('');
     try {
       const token = await getToken();
-      const res = await fetch('http://localhost:8000/api/outreach', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/outreach`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(form)
@@ -102,7 +102,7 @@ export const OutreachForm = ({ gmailStatus, onUpdateStats, showCreateModal, setS
     setLoadingActions(p => ({ ...p, [`${id}-${label}`]: true }));
     try {
       const token = await getToken();
-      const res = await fetch(`http://localhost:8000/api/outreach/${id}/${endpoint}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/outreach/${id}/${endpoint}`, {
         method: 'POST', headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) { await fetchCampaigns(); setMessage(`${label} complete!`); }
@@ -124,7 +124,7 @@ export const OutreachForm = ({ gmailStatus, onUpdateStats, showCreateModal, setS
         else bodyLines.push(l);
       }
       const token = await getToken();
-      const res = await fetch('http://localhost:8000/api/gmail/draft', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/gmail/draft`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
