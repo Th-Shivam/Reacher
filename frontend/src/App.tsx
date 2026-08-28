@@ -21,7 +21,7 @@ function App() {
         const token = await getToken()
         if (!token) return
 
-        await fetch('http://localhost:8000/api/me', {
+        await fetch(`${import.meta.env.VITE_API_URL}/api/me`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

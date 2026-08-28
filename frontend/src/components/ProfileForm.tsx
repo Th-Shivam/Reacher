@@ -31,7 +31,7 @@ export default function ProfileForm({ onUpdateStats }: ProfileFormProps) {
   const fetchProfile = async () => {
     try {
       const token = await getToken();
-      const res = await fetch('http://localhost:8000/api/profile', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/profile`, { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const d = await res.json();
         setProfile({
@@ -63,7 +63,7 @@ export default function ProfileForm({ onUpdateStats }: ProfileFormProps) {
         experience: profile.experience.split('\n').map(s => s.trim()).filter(Boolean),
         education: profile.education.split('\n').map(s => s.trim()).filter(Boolean),
       };
-      const res = await fetch('http://localhost:8000/api/profile', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/profile`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -83,7 +83,7 @@ export default function ProfileForm({ onUpdateStats }: ProfileFormProps) {
       const token = await getToken();
       const fd = new FormData();
       fd.append('file', file);
-      const res = await fetch('http://localhost:8000/api/profile/resume', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/resume`, {
         method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: fd
       });
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.detail || 'Upload failed'); }

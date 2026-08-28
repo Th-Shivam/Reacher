@@ -34,7 +34,7 @@ export default function Dashboard() {
     try {
       const token = await getToken();
       if (!token) return;
-      const res = await fetch('http://localhost:8000/api/gmail/status', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/gmail/status`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -53,7 +53,7 @@ export default function Dashboard() {
     try {
       const token = await getToken();
       if (!token) return;
-      const resOutreach = await fetch('http://localhost:8000/api/outreach', {
+      const resOutreach = await fetch(`${import.meta.env.VITE_API_URL}/api/outreach`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (resOutreach.ok) {
@@ -69,7 +69,7 @@ export default function Dashboard() {
           sentCount: sent
         }));
       }
-      const resProfile = await fetch('http://localhost:8000/api/profile', {
+      const resProfile = await fetch(`${import.meta.env.VITE_API_URL}/api/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (resProfile.ok) {
