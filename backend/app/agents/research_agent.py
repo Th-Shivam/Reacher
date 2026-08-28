@@ -19,7 +19,7 @@ Do NOT include any extra conversational filler. Return just the bullet points.
 class ResearchAgent(Agent):
     def __init__(self):
         super().__init__(
-            model_name="gemini-1.5-flash",
+            model_name="gemini-3.1-flash-lite",
             instructions=RESEARCH_INSTRUCTIONS,
             tools=[search_wikipedia, search_web]
         )
