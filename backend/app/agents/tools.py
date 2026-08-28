@@ -1,4 +1,6 @@
+# pyrefly: ignore [missing-import]
 import wikipedia
+# pyrefly: ignore [missing-import]
 from ddgs import DDGS
 
 def search_wikipedia(query: str) -> str:
