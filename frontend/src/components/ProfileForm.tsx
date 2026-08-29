@@ -22,7 +22,7 @@ export default function ProfileForm({ onUpdateStats }: ProfileFormProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [resumeMetadata, setResumeMetadata] = useState<{ filename: string } | null>(null);
+  const [resumeMetadata, setResumeMetadata] = useState<{ filename: string; resume_url?: string } | null>(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -93,6 +93,17 @@ export default function ProfileForm({ onUpdateStats }: ProfileFormProps) {
       if (onUpdateStats) onUpdateStats();
     } catch (err: any) { setError(err.message); }
     finally { setIsUploading(false); }
+  };
+
+  const copyResumeLink = async () => {
+    const resumeUrl = resumeMetadata?.resume_url;
+    if (!resumeUrl) return;
+    try {
+      await navigator.clipboard.writeText(resumeUrl);
+      setMessage('Resume link copied!');
+    } catch {
+      setError('Could not copy the resume link.');
+    }
   };
 
   const inp: React.CSSProperties = {
@@ -175,6 +186,25 @@ export default function ProfileForm({ onUpdateStats }: ProfileFormProps) {
                     <div style={{ fontSize: '11px', color: resumeMetadata ? '#166534' : '#888', overflowWrap: 'anywhere' }}>
                       {resumeMetadata ? resumeMetadata.filename : 'Upload for automated parsing'}
                     </div>
+                    {resumeMetadata?.resume_url && (
+                      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginTop: '5px' }}>
+                        <a
+                          href={resumeMetadata.resume_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ fontSize: '11px', color: '#2563EB', textDecoration: 'underline', overflowWrap: 'anywhere' }}
+                        >
+                          Open resume link
+                        </a>
+                        <button
+                          type="button"
+                          onClick={copyResumeLink}
+                          style={{ background: 'none', border: 'none', padding: 0, color: '#666', cursor: 'pointer', fontSize: '11px' }}
+                        >
+                          Copy link
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <label className="w-full justify-center sm:w-auto" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '11px 14px', borderRadius: '8px', border: 'none', fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', background: '#1A1A1A', color: '#FFFFFF', cursor: 'pointer', flexShrink: 0, minHeight: '40px' }}>
