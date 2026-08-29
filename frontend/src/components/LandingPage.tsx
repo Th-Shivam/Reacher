@@ -125,7 +125,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="landing-container">
+    <div className="landing-container" aria-busy={isLoading}>
       {/* Background 3D Spline Canvas */}
       <div className="spline-wrapper">
         {isLoading && (
@@ -137,7 +137,6 @@ export default function LandingPage() {
               className="spline-loader-animation"
               aria-label="Loading 3D experience"
             />
-            <p className="text-sm font-medium text-neutral-400" role="status">Loading 3D Experience...</p>
           </div>
         )}
         <Spline
@@ -148,43 +147,47 @@ export default function LandingPage() {
         />
       </div>
 
-      {/* Floating Dock Navbar at Bottom Center */}
-      <div
-        className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 pointer-events-auto sm:bottom-6"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      >
-        <FloatingDockDemo
-          activeScene={activeScene}
-          onSelectScene={(scene) => handleSceneTransition(scene)}
-        />
-      </div>
+      {!isLoading && (
+        <>
+          {/* Floating Dock Navbar at Bottom Center */}
+          <div
+            className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 pointer-events-auto sm:bottom-6"
+            style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+          >
+            <FloatingDockDemo
+              activeScene={activeScene}
+              onSelectScene={(scene) => handleSceneTransition(scene)}
+            />
+          </div>
 
-      {/* Hero Content Overlay (Only rendered in Scene 1) */}
-      <div className="hero-overlay-centered">
-        <AnimatePresence mode="wait">
-          {activeScene === 'scene1' && (
-            <motion.div
-              key="scene1"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.35, ease: 'easeOut' }}
-              className="hero-content-centered"
-            >
-              <span className="badge">AI OUTREACH INTELLIGENCE</span>
+          {/* Hero Content Overlay (Only rendered in Scene 1) */}
+          <div className="hero-overlay-centered">
+            <AnimatePresence mode="wait">
+              {activeScene === 'scene1' && (
+                <motion.div
+                  key="scene1"
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.35, ease: 'easeOut' }}
+                  className="hero-content-centered"
+                >
+                  <span className="badge">AI OUTREACH INTELLIGENCE</span>
 
-              <h1 className="hero-title-centered">
-                Research before <br />
-                <span className="font-light text-neutral-300 opacity-90">you reach.</span>
-              </h1>
+                  <h1 className="hero-title-centered">
+                    Research before <br />
+                    <span className="font-light text-neutral-300 opacity-90">you reach.</span>
+                  </h1>
 
-              <p className="hero-subtitle-centered">
-                Turn cold outreach into well-researched conversations.
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+                  <p className="hero-subtitle-centered">
+                    Turn cold outreach into well-researched conversations.
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </>
+      )}
     </div>
   );
 }
