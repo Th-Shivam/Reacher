@@ -108,6 +108,10 @@ export default function LandingPage() {
   };
 
   const handleSplineLoad = (splineApp: any) => {
+    // Spline's watermark is drawn by its internal logo pass rather than the DOM.
+    // Disable that pass when the runtime exposes it, with the CSS cover below as
+    // a fallback for scene/runtime versions that still paint the badge.
+    splineApp?._renderer?.pipeline?.setWatermark?.(null);
     setIsLoading(false);
     splineRef.current = splineApp;
 
@@ -145,6 +149,7 @@ export default function LandingPage() {
           onSplineMouseDown={handleSplineMouseDown}
           onMouseDown={handleSplineMouseDown}
         />
+        <div className="spline-watermark-cover" aria-hidden="true" />
       </div>
 
       {!isLoading && (
