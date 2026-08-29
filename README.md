@@ -40,7 +40,7 @@ The product is deliberately human-in-the-loop. Reacher prepares the research and
 ![Reacher desktop experience](./frontend/landing.png)
 
 <div align="center">
-  <img src="./frontend/mobile-screen.png" alt="Reacher mobile experience" width="260" />
+  
 </div>
 
 ## Product capabilities
