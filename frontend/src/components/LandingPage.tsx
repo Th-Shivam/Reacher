@@ -4,15 +4,114 @@ import { useNavigate } from 'react-router';
 import type { SplineEvent } from '@splinetool/runtime';
 import { motion, AnimatePresence } from 'motion/react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { IconArrowRight, IconLogin } from '@tabler/icons-react';
 import FloatingDockDemo from '@/components/ui/floating-dock-demo';
 
 export type HeroScene = 'scene1' | 'scene2';
 
+const mobileSceneSignals = [
+  { label: 'Cold Outreach', position: 'top-left' },
+  { label: 'Company Research', position: 'top-right' },
+  { label: 'Smart Drafts', position: 'middle-left' },
+  { label: 'Context Intelligence', position: 'middle-right' },
+  { label: 'Email Generation', position: 'bottom-left' },
+  { label: 'Opportunity Mapping', position: 'bottom-right' },
+] as const;
+
+function MobileAuthScene({
+  onSignIn,
+  onSignUp,
+}: {
+  onSignIn: () => void;
+  onSignUp: () => void;
+}) {
+  return (
+    <motion.section
+      className="mobile-auth-scene"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      aria-labelledby="mobile-auth-title"
+    >
+      <div className="mobile-auth-brand" aria-hidden="true">
+        REACHER
+      </div>
+
+      <div className="mobile-auth-signals" aria-hidden="true">
+        {mobileSceneSignals.map(({ label, position }, index) => (
+          <span
+            key={label}
+            className={`mobile-auth-signal mobile-auth-signal--${position}`}
+            style={{ animationDelay: `${index * 0.45}s` }}
+          >
+            {label}
+          </span>
+        ))}
+      </div>
+
+      <motion.div
+        className="mobile-auth-content"
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.08, duration: 0.4, ease: 'easeOut' }}
+      >
+        <span className="mobile-auth-kicker">
+          <span />
+          Outreach intelligence
+        </span>
+        <h2 id="mobile-auth-title">
+          Remove the friction from your job search journey.
+        </h2>
+        <p>
+          Research the right people, write with context, and turn every reach-out into a better conversation.
+        </p>
+
+        <div className="mobile-auth-actions">
+          <button type="button" className="mobile-auth-button mobile-auth-button--secondary" onClick={onSignIn}>
+            <IconLogin aria-hidden="true" />
+            Sign in
+          </button>
+          <button type="button" className="mobile-auth-button mobile-auth-button--primary" onClick={onSignUp}>
+            Get started
+            <IconArrowRight aria-hidden="true" />
+          </button>
+        </div>
+      </motion.div>
+    </motion.section>
+  );
+}
+
 export default function LandingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeScene, setActiveScene] = useState<HeroScene>('scene1');
+  const [isMobileViewport, setIsMobileViewport] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 767px)').matches : false,
+  );
   const splineRef = useRef<any>(null);
   const navigate = useNavigate();
+  const showMobileAuthScene = isMobileViewport && activeScene === 'scene2';
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
+    const updateViewport = () => setIsMobileViewport(mediaQuery.matches);
+
+    updateViewport();
+    mediaQuery.addEventListener('change', updateViewport);
+
+    return () => mediaQuery.removeEventListener('change', updateViewport);
+  }, []);
+
+  useEffect(() => {
+    const splineApp = splineRef.current;
+    if (!splineApp) return;
+
+    if (showMobileAuthScene) {
+      splineApp.stop?.();
+    } else {
+      splineApp.play?.();
+    }
+  }, [showMobileAuthScene]);
 
   // Intercept embedded Spline Open-URL window.open calls to prevent external 404 redirects
   useEffect(() => {
@@ -144,15 +243,25 @@ export default function LandingPage() {
           </div>
         )}
         <Spline
-          className={`spline-scene spline-scene--${activeScene}`}
+          className={`spline-scene spline-scene--${activeScene}${showMobileAuthScene ? ' spline-scene--paused' : ''}`}
           scene="https://prod.spline.design/OATYG0p9C0UaiL2c/scene.splinecode"
           onLoad={handleSplineLoad}
           onSplineMouseDown={handleSplineMouseDown}
           onMouseDown={handleSplineMouseDown}
         />
-        <div className="spline-watermark-cover" aria-hidden="true">
-          <span>REACHER</span>
-        </div>
+        <AnimatePresence>
+          {showMobileAuthScene && (
+            <MobileAuthScene
+              onSignIn={() => navigate('/sign-in')}
+              onSignUp={() => navigate('/sign-up')}
+            />
+          )}
+        </AnimatePresence>
+        {!showMobileAuthScene && (
+          <div className="spline-watermark-cover" aria-hidden="true">
+            <span>REACHER</span>
+          </div>
+        )}
       </div>
 
       {!isLoading && (
