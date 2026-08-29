@@ -9,6 +9,7 @@ import LandingPage from './components/LandingPage'
 import SignInPage from './components/SignInPage'
 import SignUpPage from './components/SignUpPage'
 import Dashboard from './components/Dashboard'
+import AboutPage from './components/AboutPage'
 
 function App() {
   const { isSignedIn, isLoaded, getToken } = useAuth()
@@ -43,6 +44,11 @@ function App() {
       <Route
         path="/sign-up/*"
         element={<SignUpPage />}
+      />
+      {/* Public — must sit above the catch-all, which otherwise swallows it */}
+      <Route
+        path="/about"
+        element={<AboutPage />}
       />
       <Route
         path="*"
