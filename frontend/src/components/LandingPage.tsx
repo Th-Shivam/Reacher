@@ -3,6 +3,7 @@ import Spline from '@splinetool/react-spline';
 import { useNavigate } from 'react-router';
 import type { SplineEvent } from '@splinetool/runtime';
 import { motion, AnimatePresence } from 'motion/react';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import FloatingDockDemo from '@/components/ui/floating-dock-demo';
 
 export type HeroScene = 'scene1' | 'scene2';
@@ -129,8 +130,14 @@ export default function LandingPage() {
       <div className="spline-wrapper">
         {isLoading && (
           <div className="spline-loader">
-            <div className="spinner"></div>
-            <p className="text-sm font-medium text-neutral-400">Loading 3D Experience...</p>
+            <DotLottieReact
+              src="https://lottie.host/67ee2bcb-fe66-4594-b658-53cd62f1ca01/RvUpi1j3QG.lottie"
+              loop
+              autoplay
+              className="spline-loader-animation"
+              aria-label="Loading 3D experience"
+            />
+            <p className="text-sm font-medium text-neutral-400" role="status">Loading 3D Experience...</p>
           </div>
         )}
         <Spline
