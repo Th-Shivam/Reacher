@@ -149,7 +149,9 @@ export default function LandingPage() {
           onSplineMouseDown={handleSplineMouseDown}
           onMouseDown={handleSplineMouseDown}
         />
-        <div className="spline-watermark-cover" aria-hidden="true" />
+        <div className="spline-watermark-cover" aria-hidden="true">
+          <span>REACHER</span>
+        </div>
       </div>
 
       {!isLoading && (
