@@ -8,6 +8,7 @@ from app.api.dependencies import get_current_user
 from app.api.routes.profile import router as profile_router
 from app.api.routes.outreach import router as outreach_router
 from app.api.routes.gmail import router as gmail_router
+from app.api.routes.public import router as public_router
 
 from pymongo import ReturnDocument
 
@@ -33,6 +34,7 @@ app.add_middleware(
 app.include_router(profile_router)
 app.include_router(outreach_router, prefix="/api/outreach", tags=["outreach"])
 app.include_router(gmail_router, prefix="/api/gmail", tags=["gmail"])
+app.include_router(public_router)
 
 
 @app.get("/api/health")
