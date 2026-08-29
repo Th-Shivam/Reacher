@@ -36,15 +36,8 @@ export default function FloatingDockDemo({
     },
     {
       title: "Explore",
-      icon: (
-        <IconSparkles
-          className={`h-full w-full ${activeScene === "scene2" ? "text-white" : "text-white/50"
-            }`}
-        />
-      ),
-      onClick: () => {
-        if (onSelectScene) onSelectScene("scene2");
-      },
+      icon: <IconSparkles className="h-full w-full text-white" />,
+      onClick: () => navigate("/about"),
     },
     {
       title: "Sign In",
