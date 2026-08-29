@@ -13,9 +13,9 @@
   --color-sync-blue: #4A90E2;
 }
 
-* {
-  margin: 0;
-  padding: 0;
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -28,7 +28,7 @@ body {
   min-height: 100vh;
   background-color: #FDFCF8;
   color: #1A1A1A;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .pipeline-card {
@@ -107,17 +107,10 @@ body {
   gap: 1rem;
 }
 
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: #6366f1;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
+.spline-loader-animation {
+  display: block;
+  width: 128px;
+  height: 128px;
 }
 
 /* Standalone Clean Wordmark Logo */
