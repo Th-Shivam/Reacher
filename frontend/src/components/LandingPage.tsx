@@ -144,6 +144,7 @@ export default function LandingPage() {
           </div>
         )}
         <Spline
+          className={`spline-scene spline-scene--${activeScene}`}
           scene="https://prod.spline.design/OATYG0p9C0UaiL2c/scene.splinecode"
           onLoad={handleSplineLoad}
           onSplineMouseDown={handleSplineMouseDown}
