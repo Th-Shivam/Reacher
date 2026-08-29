@@ -178,64 +178,6 @@ export const OutreachForm = ({ gmailStatus, onUpdateStats, showCreateModal, setS
     boxSizing: 'border-box',
   };
 
-  const FallbackRow = ({ company, role, stage }: { company: string; role: string; stage: 'sent' | 'progress' }) => (
-    <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-3">
-      {/* Research */}
-      <div style={cardStyle}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid #F0EFE9' }}>
-          <span style={labelStyle}>01 · Research</span>
-          {pill('✓ Completed', COMPLETED)}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}>
-          {/* Company initial badge */}
-          <div style={{ width: '44px', height: '44px', borderRadius: '10px', background: '#F0EFE9', border: '1px solid #E8E6DD', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '20px', fontWeight: 700, color: '#1A1A1A', lineHeight: 1 }}>
-              {company.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <div>
-            <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '22px', fontWeight: 600, color: '#1A1A1A', lineHeight: 1.15 }}>{company}</div>
-            <div style={{ fontSize: '12px', color: '#888', marginTop: '3px', fontWeight: 500 }}>{role}</div>
-          </div>
-        </div>
-        <div style={{ paddingTop: '12px', borderTop: '1px solid #F0EFE9', display: 'flex', justifyContent: 'flex-end' }}>
-          <button style={btnOutline}>View Research →</button>
-        </div>
-      </div>
-      {/* Generate */}
-      <div style={{ ...cardStyle, background: '#FDFCF8' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid #F0EFE9' }}>
-          <span style={labelStyle}>02 · Generate</span>
-          {pill('✓ Completed', COMPLETED)}
-        </div>
-        <div style={{ flex: 1, background: '#FFFFFF', border: '1px solid #E8E6DD', borderRadius: '8px', padding: '12px', fontSize: '13px', color: '#555', lineHeight: 1.6, fontStyle: 'italic' }}>
-          "Angle identified: Blog post on scaling design systems and desktop app UI layout..."
-        </div>
-        <div style={{ paddingTop: '12px', borderTop: '1px solid #F0EFE9', display: 'flex', justifyContent: 'flex-end' }}>
-          <button style={btnOutline}>View Email →</button>
-        </div>
-      </div>
-      {/* Reach Out */}
-      <div style={{ ...cardStyle, background: stage === 'sent' ? '#F5F4EF' : '#EEF4FF', border: stage === 'sent' ? '1px solid #1A1A1A' : '1px solid #BFDBFE' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: `1px solid ${stage === 'sent' ? '#D6D4CC' : '#BFDBFE'}` }}>
-          <span style={{ ...labelStyle, color: stage === 'sent' ? '#555' : '#2563EB' }}>03 · Reach Out</span>
-          {stage === 'sent' ? pill('✓ Sent', COMPLETED) : pill('● In Progress', PROGRESS)}
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '16px', fontWeight: 700, color: '#1A1A1A', marginBottom: '4px' }}>
-            {stage === 'sent' ? 'Gmail Draft Created' : 'Saving to Gmail Drafts'}
-          </div>
-          <div style={{ fontSize: '12px', color: '#666' }}>
-            {stage === 'sent' ? '2 hours ago · STATUS: DELIVERED' : 'Syncing OAuth session'}
-          </div>
-        </div>
-        <div style={{ paddingTop: '12px', borderTop: `1px solid ${stage === 'sent' ? '#D6D4CC' : '#BFDBFE'}`, display: 'flex', justifyContent: 'flex-end' }}>
-          <button style={btnOutline}>View Status →</button>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <section style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
 
@@ -258,7 +200,9 @@ export const OutreachForm = ({ gmailStatus, onUpdateStats, showCreateModal, setS
         <div>
           <h2 style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#1A1A1A', margin: 0 }}>Active Pipeline</h2>
           <p style={{ fontSize: '13px', color: '#888', marginTop: '4px' }}>
-            {campaigns.length > 0 ? campaigns.length : 2} prospects currently processing
+            {campaigns.length === 0
+              ? 'No active prospects yet'
+              : `${campaigns.length} ${campaigns.length === 1 ? 'prospect' : 'prospects'} currently processing`}
           </p>
         </div>
         <button
@@ -517,14 +461,6 @@ export const OutreachForm = ({ gmailStatus, onUpdateStats, showCreateModal, setS
             </div>
           );
         })}
-
-        {/* Fallback placeholder rows when no real campaigns */}
-        {campaigns.length === 0 && (
-          <>
-            <FallbackRow company="Linear" role="Head of Growth" stage="sent" />
-            <FallbackRow company="OpenAI" role="Marketing Manager" stage="progress" />
-          </>
-        )}
       </div>
     </section>
   );
