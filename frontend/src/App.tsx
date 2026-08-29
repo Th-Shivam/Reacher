@@ -12,6 +12,7 @@ import Dashboard from './components/Dashboard'
 import AboutPage from './components/AboutPage'
 import CustomCursor from './components/CustomCursor'
 import SeoHead from './components/SeoHead'
+import PwaInstallPrompt from './components/PwaInstallPrompt'
 
 function App() {
   const { isSignedIn, isLoaded, getToken } = useAuth()
@@ -41,6 +42,7 @@ function App() {
     <>
       <CustomCursor />
       <SeoHead />
+      <PwaInstallPrompt />
       <Routes>
         <Route
           path="/sign-in/*"
