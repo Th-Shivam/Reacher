@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+Disallow: /sign-in
+Disallow: /sign-up
+Disallow: /dashboard
+Disallow: /campaigns
+Disallow: /settings
+Disallow: /api
+
+Sitemap: https://reacherpro.vercel.app/sitemap.xml

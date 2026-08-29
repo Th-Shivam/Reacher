@@ -11,6 +11,7 @@ import SignUpPage from './components/SignUpPage'
 import Dashboard from './components/Dashboard'
 import AboutPage from './components/AboutPage'
 import CustomCursor from './components/CustomCursor'
+import SeoHead from './components/SeoHead'
 
 function App() {
   const { isSignedIn, isLoaded, getToken } = useAuth()
@@ -39,6 +40,7 @@ function App() {
   return (
     <>
       <CustomCursor />
+      <SeoHead />
       <Routes>
         <Route
           path="/sign-in/*"
