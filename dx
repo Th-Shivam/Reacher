@@ -1,0 +1,127 @@
+[33m3d3bc6f[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m refs/remotes/origin/master@{0}: update by push
+[33m3d3bc6f[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m refs/heads/master@{0}: Branch: renamed refs/heads/clean-main to refs/heads/master
+[33m3d3bc6f[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m refs/heads/master@{1}: commit (initial): Initial clean backend deployment
+[33m3d3bc6f[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m HEAD@{0}: Branch: renamed refs/heads/clean-main to refs/heads/master
+[33m3d3bc6f[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m HEAD@{2}: commit (initial): Initial clean backend deployment
+[33m10fb074[m HEAD@{3}: commit: Solved CORS , added deployed url
+[33m89a3158[m refs/remotes/origin/master@{1}: update by push
+[33m89a3158[m HEAD@{4}: commit: Fix gitignore swallowing frontend/src/lib
+[33m193ef7c[m refs/remotes/origin/master@{2}: pull origin master: fast-forward
+[33m193ef7c[m HEAD@{5}: pull origin master: Fast-forward
+[33ma141997[m[33m ([m[1;31morigin/frontend-integration[m[33m, [m[1;32mfrontend-integration[m[33m)[m HEAD@{6}: merge frontend-integration: Fast-forward
+[33mcb67148[m HEAD@{7}: checkout: moving from frontend-integration to master
+[33ma141997[m[33m ([m[1;31morigin/frontend-integration[m[33m, [m[1;32mfrontend-integration[m[33m)[m HEAD@{8}: checkout: moving from master to frontend-integration
+[33mcb67148[m HEAD@{9}: checkout: moving from frontend-integration to master
+[33ma141997[m[33m ([m[1;31morigin/frontend-integration[m[33m, [m[1;32mfrontend-integration[m[33m)[m refs/remotes/origin/frontend-integration@{0}: update by push
+[33ma141997[m[33m ([m[1;31morigin/frontend-integration[m[33m, [m[1;32mfrontend-integration[m[33m)[m refs/heads/frontend-integration@{0}: commit: Added ignore deprecations
+[33ma141997[m[33m ([m[1;31morigin/frontend-integration[m[33m, [m[1;32mfrontend-integration[m[33m)[m HEAD@{10}: commit: Added ignore deprecations
+[33m4cb7729[m refs/remotes/origin/frontend-integration@{1}: update by push
+[33m4cb7729[m refs/heads/frontend-integration@{1}: commit: Fixed the floating-deck import issue
+[33m4cb7729[m HEAD@{11}: commit: Fixed the floating-deck import issue
+[33ma419b70[m refs/remotes/origin/frontend-integration@{2}: update by push
+[33ma419b70[m refs/heads/frontend-integration@{2}: commit: Route signed-in users into the new dashboard
+[33m07d79e0[m refs/heads/frontend-integration@{3}: commit: Add the authenticated Reacher dashboard
+[33ma419b70[m HEAD@{12}: commit: Route signed-in users into the new dashboard
+[33m07d79e0[m HEAD@{13}: commit: Add the authenticated Reacher dashboard
+[33m153b032[m refs/heads/frontend-integration@{4}: commit: Redesign outreach flows around automated pipeline progress
+[33me40539c[m refs/heads/frontend-integration@{5}: commit: Redesign the candidate profile workspace
+[33m153b032[m HEAD@{14}: commit: Redesign outreach flows around automated pipeline progress
+[33me40539c[m HEAD@{15}: commit: Redesign the candidate profile workspace
+[33m2a9f74e[m refs/heads/frontend-integration@{6}: commit: Introduce the editorial dashboard theme and motion styles
+[33m2a9f74e[m HEAD@{16}: commit: Introduce the editorial dashboard theme and motion styles
+[33me9c19f2[m refs/heads/frontend-integration@{7}: commit: Apply Reacher branding and editorial fonts
+[33me9c19f2[m HEAD@{17}: commit: Apply Reacher branding and editorial fonts
+[33mcff3c15[m refs/heads/frontend-integration@{8}: commit: Add the Reacher Prime dashboard reference image
+[33mcff3c15[m HEAD@{18}: commit: Add the Reacher Prime dashboard reference image
+[33m11d86a4[m refs/heads/frontend-integration@{9}: commit: Add the Reacher Prime dashboard prototype
+[33m11d86a4[m HEAD@{19}: commit: Add the Reacher Prime dashboard prototype
+[33med0bbf6[m refs/heads/frontend-integration@{10}: commit: Capture the Reacher Prime design system
+[33med0bbf6[m HEAD@{20}: commit: Capture the Reacher Prime design system
+[33mbd541ff[m refs/heads/frontend-integration@{11}: commit: Document the Reacher UI and UX handoff
+[33mbd541ff[m HEAD@{21}: commit: Document the Reacher UI and UX handoff
+[33m2ea889e[m refs/heads/frontend-integration@{12}: commit: Add a Clerk OAuth token inspection script
+[33m2ea889e[m HEAD@{22}: commit: Add a Clerk OAuth token inspection script
+[33m82057a2[m refs/heads/frontend-integration@{13}: commit: Register Gmail routes and make user creation atomic
+[33m82057a2[m HEAD@{23}: commit: Register Gmail routes and make user creation atomic
+[33m23fb546[m refs/heads/frontend-integration@{14}: commit: Start the outreach pipeline when a campaign is created
+[33m23fb546[m HEAD@{24}: commit: Start the outreach pipeline when a campaign is created
+[33mdeb919d[m refs/heads/frontend-integration@{15}: commit: Automate the full outreach generation pipeline
+[33mdeb919d[m HEAD@{25}: commit: Automate the full outreach generation pipeline
+[33m5cb6e7c[m refs/heads/frontend-integration@{16}: commit: Add Gmail connection checks and draft creation endpoints
+[33m5cb6e7c[m HEAD@{26}: commit: Add Gmail connection checks and draft creation endpoints
+[33mb955899[m refs/heads/frontend-integration@{17}: commit: Track automated pipeline and Gmail draft status
+[33mb955899[m HEAD@{27}: commit: Track automated pipeline and Gmail draft status
+[33md153a1c[m refs/heads/frontend-integration@{18}: commit: Ensure Clerk user IDs stay unique in MongoDB
+[33md153a1c[m HEAD@{28}: commit: Ensure Clerk user IDs stay unique in MongoDB
+[33m3bf9586[m refs/heads/frontend-integration@{19}: commit: Silence missing import checks for research tools
+[33m3bf9586[m HEAD@{29}: commit: Silence missing import checks for research tools
+[33m1331ff8[m refs/heads/frontend-integration@{20}: commit: Move company research to Gemini 3.1 Flash Lite
+[33m1331ff8[m HEAD@{30}: commit: Move company research to Gemini 3.1 Flash Lite
+[33m547205b[m refs/heads/frontend-integration@{21}: commit: Pin the backend Python dependencies
+[33m547205b[m HEAD@{31}: commit: Pin the backend Python dependencies
+[33m833933e[m refs/heads/frontend-integration@{22}: commit: fix: restore spline button click routing and allow pointer-events passthrough
+[33m833933e[m HEAD@{32}: commit: fix: restore spline button click routing and allow pointer-events passthrough
+[33m6319dd3[m refs/heads/frontend-integration@{23}: commit: fix: enlarge top-left logo wordmark size ~3x
+[33m6319dd3[m HEAD@{33}: commit: fix: enlarge top-left logo wordmark size ~3x
+[33m60abd07[m refs/heads/frontend-integration@{24}: commit: fix: replace top-left text logo with public asset logo.png
+[33m60abd07[m HEAD@{34}: commit: fix: replace top-left text logo with public asset logo.png
+[33m6693ec8[m refs/heads/frontend-integration@{25}: commit: fix: render pure spline scene in scene2 without HTML text overlays
+[33m6693ec8[m HEAD@{35}: commit: fix: render pure spline scene in scene2 without HTML text overlays
+[33me11dbe4[m refs/heads/frontend-integration@{26}: commit: fix: ultra-clean minimal hero typography without buttons or trust labels
+[33me11dbe4[m HEAD@{36}: commit: fix: ultra-clean minimal hero typography without buttons or trust labels
+[33m2e2c036[m refs/heads/frontend-integration@{27}: commit: fix: refine hero layout vertical alignment, standalone logo, and spacious spline canvas placement
+[33m2e2c036[m HEAD@{37}: commit: fix: refine hero layout vertical alignment, standalone logo, and spacious spline canvas placement
+[33m0bf6766[m refs/heads/frontend-integration@{28}: commit: feat: implement Spline-React synchronized multi-scene landing page experience
+[33m0bf6766[m HEAD@{38}: commit: feat: implement Spline-React synchronized multi-scene landing page experience
+[33m535b417[m refs/remotes/origin/frontend-integration@{3}: update by push
+[33m535b417[m refs/heads/frontend-integration@{29}: commit: fix: center floating dock items vertically inside container
+[33m535b417[m HEAD@{39}: commit: fix: center floating dock items vertically inside container
+[33m416b9bb[m refs/heads/frontend-integration@{30}: commit: feat: exact Aceternity FloatingDock animation with React Router click handling
+[33m416b9bb[m HEAD@{40}: commit: feat: exact Aceternity FloatingDock animation with React Router click handling
+[33m7910ce2[m refs/heads/frontend-integration@{31}: commit: fix: restore spring magnification floating animation for dock items
+[33m7910ce2[m HEAD@{41}: commit: fix: restore spring magnification floating animation for dock items
+[33mea8d3c7[m refs/heads/frontend-integration@{32}: commit: refactor: refine floating dock styling, proportions, icon sizes, tooltips, and responsive layout
+[33mea8d3c7[m HEAD@{42}: commit: refactor: refine floating dock styling, proportions, icon sizes, tooltips, and responsive layout
+[33me967df5[m refs/heads/frontend-integration@{33}: commit: fix: position FloatingDock at bottom-center of screen
+[33me967df5[m HEAD@{43}: commit: fix: position FloatingDock at bottom-center of screen
+[33mb9b2550[m refs/heads/frontend-integration@{34}: commit: feat: integrate FloatingDock component with Tailwind CSS v4 and Framer Motion
+[33mb9b2550[m HEAD@{44}: commit: feat: integrate FloatingDock component with Tailwind CSS v4 and Framer Motion
+[33med3fd8c[m refs/heads/frontend-integration@{35}: commit: feat: robust object hierarchy mapping for SignInButton (StartSignIn) and SignUpButton (StartSignUp)
+[33med3fd8c[m HEAD@{45}: commit: feat: robust object hierarchy mapping for SignInButton (StartSignIn) and SignUpButton (StartSignUp)
+[33m21bc23a[m refs/heads/frontend-integration@{36}: commit: fix: intercept embedded Spline open-url actions to prevent external 404 navigation
+[33m21bc23a[m HEAD@{46}: commit: fix: intercept embedded Spline open-url actions to prevent external 404 navigation
+[33m7413bfa[m refs/heads/frontend-integration@{37}: commit: feat: connect Spline SignInButton and GetStartedButton to React Router /sign-in and /sign-up routes
+[33m7413bfa[m HEAD@{47}: commit: feat: connect Spline SignInButton and GetStartedButton to React Router /sign-in and /sign-up routes
+[33m2ae6784[m refs/heads/frontend-integration@{38}: commit: feat: add robust event listener for button hierarchy in Spline 3D scene
+[33m2ae6784[m HEAD@{48}: commit: feat: add robust event listener for button hierarchy in Spline 3D scene
+[33m63a2876[m refs/heads/frontend-integration@{39}: commit: feat: attach 3D Spline button click to Clerk openSignUp modal
+[33m63a2876[m HEAD@{49}: commit: feat: attach 3D Spline button click to Clerk openSignUp modal
+[33m6b0d2ab[m refs/heads/frontend-integration@{40}: commit: feat: render LandingPage with Spline 3D scene for signed-out users
+[33m6b0d2ab[m HEAD@{50}: commit: feat: render LandingPage with Spline 3D scene for signed-out users
+[33m1795048[m refs/heads/frontend-integration@{41}: commit: feat: add LandingPage component with Spline 3D scene
+[33m1795048[m HEAD@{51}: commit: feat: add LandingPage component with Spline 3D scene
+[33m92105ff[m refs/heads/frontend-integration@{42}: commit: chore: add @splinetool/react-spline dependency
+[33m92105ff[m HEAD@{52}: commit: chore: add @splinetool/react-spline dependency
+[33mff58f7c[m refs/heads/frontend-integration@{43}: commit: docs: add spline 3d landing page implementation plan
+[33mff58f7c[m HEAD@{53}: commit: docs: add spline 3d landing page implementation plan
+[33me127844[m refs/heads/frontend-integration@{44}: commit: docs: add spline 3d landing page design spec
+[33me127844[m HEAD@{54}: commit: docs: add spline 3d landing page design spec
+[33mcb67148[m refs/heads/frontend-integration@{45}: branch: Created from HEAD
+[33mcb67148[m HEAD@{55}: checkout: moving from master to frontend-integration
+[33mcb67148[m HEAD@{56}: commit: feat(ai): integrate Google API to push drafted emails directly to Gmail
+[33m9776568[m HEAD@{57}: commit: feat(ai): introduce Reviewer Agent for draft quality assurance
+[33m0a37ca6[m HEAD@{58}: commit: fix(ai): update duckduckgo-search to ddgs to fix runtime warning
+[33mef145eb[m HEAD@{59}: commit: feat(ai): introduce Research Agent with Tool Use for Wikipedia and Web Search
+[33mc05006c[m HEAD@{60}: commit: feat(profile): add contact info fields and pass them to outreach writer
+[33m943ae87[m refs/remotes/origin/master@{3}: update by push
+[33m943ae87[m HEAD@{61}: commit: docs: add project readme and gitignore
+[33m92d3c10[m HEAD@{62}: commit: chore(frontend): initialize react vite frontend scaffolding and configuration
+[33m94e86ed[m HEAD@{63}: commit: chore(backend): initialize core backend services, database, and configurations
+[33m971f0a3[m HEAD@{64}: commit: feat(ui): add profile form component for candidate data entry
+[33m73fdc9f[m HEAD@{65}: commit: feat(api): implement profile routing and validation schemas
+[33me8cc970[m HEAD@{66}: commit: feat(ai): introduce candidate analyzer agent to parse profiles
+[33mc5b09e7[m HEAD@{67}: commit: feat(ai): introduce jd analyzer agent to parse job requirements
+[33m4c4154f[m HEAD@{68}: commit: feat(ui): add button and display for generating personalized draft emails
+[33m313e48f[m HEAD@{69}: commit: feat(api): add endpoint to generate draft emails via ai writer agent
+[33m1e00d3c[m HEAD@{70}: commit: feat(ai): introduce outreach writer agent for personalized email drafting
+[33me51ad7b[m HEAD@{71}: commit (initial): fix(schema): make contact_email optional for database fetching
