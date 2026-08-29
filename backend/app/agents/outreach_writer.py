@@ -19,7 +19,9 @@ The email should:
 - Include a clear call to action (e.g., asking for a brief chat).
 - CRITICAL: NEVER use placeholder brackets like [Your Name], [Phone Number], or [Hiring Manager]. 
 - Use the actual Candidate Name, Phone Number, Email, GitHub, LinkedIn, and X (Twitter) URLs from the provided Profile Details.
+- If a Resume URL is provided, include it exactly once as `Resume: <url>` near the sign-off.
 - Only include the contact links that are actually provided in the Profile Details (skip empty ones).
+- Never invent, shorten, or alter a Resume URL. If one is not provided, do not mention a resume.
 - If the recruiter's name is unknown, use "Hiring Team at {Company Name}" or "Engineering Team at {Company Name}".
 - End the email with a proper sign-off containing the candidate's actual name and contact links provided.
 
@@ -46,3 +48,11 @@ class OutreachWriterAgent(Agent):
             "Please write the cold outreach email based on this information. Remember, NO placeholders!"
         )
         return self.run(prompt)
+
+
+def ensure_resume_link(draft: str, profile_data: dict) -> str:
+    """Guarantee the exact resume URL is present even if the model omits it."""
+    resume_url = profile_data.get("resume_url")
+    if not resume_url or resume_url in draft:
+        return draft
+    return f"{draft.rstrip()}\n\nResume: {resume_url}"

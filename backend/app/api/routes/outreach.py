@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request
 from typing import List
 from pydantic import BaseModel
 import json
@@ -7,13 +7,14 @@ from bson import ObjectId
 from app.api.dependencies import get_current_user
 from app.schemas.outreach import OutreachCreate, OutreachInDB
 from app.services import outreach as outreach_service
+from app.services import profile as profile_service
 from app.services.gmail import create_gmail_draft
 from app.services.pipeline import run_full_pipeline
 from app.db.mongodb import outreach_collection, candidate_profiles_collection
 # pyrefly: ignore [missing-import]
 from app.agents.jd_analyzer import JDAnalyzerAgent
 from app.agents.candidate_analyzer import CandidateAnalyzerAgent
-from app.agents.outreach_writer import OutreachWriterAgent
+from app.agents.outreach_writer import OutreachWriterAgent, ensure_resume_link
 from app.agents.research_agent import ResearchAgent
 from app.agents.reviewer_agent import ReviewerAgent
 
@@ -208,7 +209,11 @@ async def research_company(campaign_id: str, user_id: str = Depends(get_current_
         raise HTTPException(status_code=500, detail=f"Company Research Failed: {str(e)}")
 
 @router.post("/{campaign_id}/generate-draft")
-async def generate_outreach_draft(campaign_id: str, user_id: str = Depends(get_current_user)):
+async def generate_outreach_draft(
+    campaign_id: str,
+    request: Request,
+    user_id: str = Depends(get_current_user),
+):
     """
     Generates a personalized cold email using JD and Candidate analyses.
     """
@@ -230,22 +235,11 @@ async def generate_outreach_draft(campaign_id: str, user_id: str = Depends(get_c
             detail="Missing analysis data. Please analyze JD, Candidate, and Research the Company first."
         )
 
-    # Optimization: if draft exists, just return it
-    if campaign.get("generated_draft"):
-        return {
-            "status": "success",
-            "campaign_id": campaign_id,
-            "draft": campaign["generated_draft"],
-            "cached": True
-        }
-
-    try:
-        agent = OutreachWriterAgent()
-    except ValueError as e:
-        raise HTTPException(status_code=500, detail=str(e))
-        
     # Fetch user profile to provide contact info
-    user_profile = await candidate_profiles_collection.find_one({"clerk_id": user_id})
+    user_profile = await profile_service.ensure_resume_link(
+        user_id,
+        public_base_url=str(request.base_url),
+    )
     profile_data = {}
     if user_profile:
         # Exclude internal DB IDs to keep prompt clean
@@ -255,17 +249,38 @@ async def generate_outreach_draft(campaign_id: str, user_id: str = Depends(get_c
             "phone": user_profile.get("phone", ""),
             "github_url": user_profile.get("github", ""),
             "linkedin_url": user_profile.get("linkedin", ""),
-            "x_url": user_profile.get("x_url", "")
+            "x_url": user_profile.get("x_url", ""),
+            "resume_url": (user_profile.get("resume") or {}).get("resume_url", ""),
+        }
+
+    # Reuse an existing draft, but upgrade older drafts with the resume link.
+    if campaign.get("generated_draft"):
+        draft = ensure_resume_link(campaign["generated_draft"], profile_data)
+        if draft != campaign["generated_draft"]:
+            await outreach_collection.update_one(
+                {"_id": ObjectId(campaign_id)},
+                {"$set": {"generated_draft": draft}},
+            )
+        return {
+            "status": "success",
+            "campaign_id": campaign_id,
+            "draft": draft,
+            "cached": True
         }
 
     try:
-        draft = agent.write(
+        agent = OutreachWriterAgent()
+    except ValueError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    try:
+        draft = ensure_resume_link(agent.write(
             json.dumps(jd_analysis),
             json.dumps(candidate_analysis),
             profile_data,
             campaign.get("company_name", "the company"),
             company_research
-        )
+        ), profile_data)
         
         await outreach_collection.update_one(
             {"_id": ObjectId(campaign_id)},

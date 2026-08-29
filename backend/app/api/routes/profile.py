@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
 from app.api.dependencies import get_current_user
 from app.schemas.profile import CandidateProfileCreate, CandidateProfileBase
 from app.services import profile as profile_service
@@ -22,6 +22,7 @@ async def update_my_profile(
 
 @router.post("/resume", response_model=CandidateProfileBase)
 async def upload_my_resume(
+    request: Request,
     file: UploadFile = File(...),
     user_id: str = Depends(get_current_user)
 ):
@@ -35,5 +36,9 @@ async def upload_my_resume(
     if file.size and file.size > MAX_SIZE:
         raise HTTPException(status_code=400, detail="File too large. Max 5MB.")
         
-    profile = await profile_service.upload_resume(user_id, file)
+    profile = await profile_service.upload_resume(
+        user_id,
+        file,
+        public_base_url=str(request.base_url),
+    )
     return profile

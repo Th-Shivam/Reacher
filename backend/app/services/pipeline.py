@@ -21,10 +21,11 @@ from bson import ObjectId  # pyrefly: ignore [missing-import]
 from clerk_backend_api import Clerk  # pyrefly: ignore [missing-import]
 
 from app.db.mongodb import outreach_collection, candidate_profiles_collection
+from app.services import profile as profile_service
 from app.agents.jd_analyzer import JDAnalyzerAgent
 from app.agents.candidate_analyzer import CandidateAnalyzerAgent
 from app.agents.research_agent import ResearchAgent
-from app.agents.outreach_writer import OutreachWriterAgent
+from app.agents.outreach_writer import OutreachWriterAgent, ensure_resume_link
 from app.services.gmail import create_gmail_draft
 
 log = logging.getLogger(__name__)
@@ -113,7 +114,7 @@ async def run_full_pipeline(campaign_id: str, user_id: str) -> None:
         await _set_status(campaign_id, "generating_draft")
         try:
             # Re-fetch to get latest profile contact info
-            user_profile = await candidate_profiles_collection.find_one({"clerk_id": user_id})
+            user_profile = await profile_service.ensure_resume_link(user_id)
             contact_data = {}
             if user_profile:
                 contact_data = {
@@ -123,15 +124,16 @@ async def run_full_pipeline(campaign_id: str, user_id: str) -> None:
                     "github_url": user_profile.get("github", ""),
                     "linkedin_url": user_profile.get("linkedin", ""),
                     "x_url": user_profile.get("x_url", ""),
+                    "resume_url": (user_profile.get("resume") or {}).get("resume_url", ""),
                 }
             writer = OutreachWriterAgent()
-            draft_text = writer.write(
+            draft_text = ensure_resume_link(writer.write(
                 json.dumps(jd_analysis),
                 json.dumps(candidate_analysis),
                 contact_data,
                 campaign.get("company_name", "the company"),
                 company_research,
-            )
+            ), contact_data)
             await _set_status(campaign_id, "draft_done", {
                 "generated_draft": draft_text,
                 "status": "draft_generated",
