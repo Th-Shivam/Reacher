@@ -202,6 +202,29 @@ body {
   z-index: 1;
 }
 
+.spline-scene {
+  position: absolute !important;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.spline-scene canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+@media (max-width: 767px) and (orientation: portrait) {
+  .spline-scene--scene2 {
+    top: -58%;
+    right: auto;
+    bottom: auto;
+    left: -45%;
+    width: 190% !important;
+    height: 190% !important;
+  }
+}
+
 .spline-loader {
   position: fixed;
   inset: 0;
