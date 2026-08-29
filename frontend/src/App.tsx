@@ -10,6 +10,7 @@ import SignInPage from './components/SignInPage'
 import SignUpPage from './components/SignUpPage'
 import Dashboard from './components/Dashboard'
 import AboutPage from './components/AboutPage'
+import CustomCursor from './components/CustomCursor'
 
 function App() {
   const { isSignedIn, isLoaded, getToken } = useAuth()
@@ -36,35 +37,38 @@ function App() {
   }, [isSignedIn, isLoaded, getToken])
 
   return (
-    <Routes>
-      <Route
-        path="/sign-in/*"
-        element={<SignInPage />}
-      />
-      <Route
-        path="/sign-up/*"
-        element={<SignUpPage />}
-      />
-      {/* Public — must sit above the catch-all, which otherwise swallows it */}
-      <Route
-        path="/about"
-        element={<AboutPage />}
-      />
-      <Route
-        path="*"
-        element={
-          <>
-            <Show when="signed-out">
-              <LandingPage />
-            </Show>
+    <>
+      <CustomCursor />
+      <Routes>
+        <Route
+          path="/sign-in/*"
+          element={<SignInPage />}
+        />
+        <Route
+          path="/sign-up/*"
+          element={<SignUpPage />}
+        />
+        {/* Public — must sit above the catch-all, which otherwise swallows it */}
+        <Route
+          path="/about"
+          element={<AboutPage />}
+        />
+        <Route
+          path="*"
+          element={
+            <>
+              <Show when="signed-out">
+                <LandingPage />
+              </Show>
 
-            <Show when="signed-in">
-              <Dashboard />
-            </Show>
-          </>
-        }
-      />
-    </Routes>
+              <Show when="signed-in">
+                <Dashboard />
+              </Show>
+            </>
+          }
+        />
+      </Routes>
+    </>
   )
 }
 
