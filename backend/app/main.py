@@ -15,6 +15,7 @@ from app.api.routes.public import router as public_router
 from app.core.security import env_int
 from app.core.safe_logging import log_exception
 
+# pyrefly: ignore [missing-import]
 from pymongo import ReturnDocument
 
 load_dotenv()

@@ -5,7 +5,9 @@ import os
 import secrets
 import tempfile
 from fastapi import UploadFile, HTTPException
+# pyrefly: ignore [missing-import]
 from appwrite.id import ID
+# pyrefly: ignore [missing-import]
 from appwrite.input_file import InputFile
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
