@@ -1,10 +1,67 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth, useSession, useUser, UserButton } from '@clerk/react';
+import {
+  IconArrowUpRight,
+  IconBrandGmail,
+  IconBriefcase,
+  IconCheck,
+  IconChevronRight,
+  IconFileCv,
+  IconLayoutDashboard,
+  IconMailCheck,
+  IconPlus,
+  IconRefresh,
+  IconSend,
+  IconSparkles,
+  IconUserCircle,
+} from '@tabler/icons-react';
 import { OutreachForm } from './OutreachForm';
 import ProfileForm from './ProfileForm';
-import { IconArrowUpRight, IconBrandGmail } from '@tabler/icons-react';
+import './Dashboard.css';
 
 export type DashboardTab = 'outreach' | 'profile' | 'gmail';
+
+type GmailStatus = {
+  connected: boolean;
+  gmail_accessible?: boolean;
+  email_address?: string;
+  loading: boolean;
+};
+
+type CampaignOverview = {
+  generated_draft?: string;
+  is_saved_in_drafts?: boolean;
+  status?: string;
+};
+
+type ProfileOverview = {
+  name?: string;
+  headline?: string;
+  resume?: unknown;
+  skills?: unknown[];
+};
+
+const initialStats = {
+  totalCampaigns: 0,
+  draftsCount: 0,
+  sentCount: 0,
+  generatedCount: 0,
+  profileCompleted: false,
+  profileSkillsCount: 0,
+};
+
+const navItems = [
+  { id: 'outreach' as DashboardTab, label: 'Dashboard', icon: IconLayoutDashboard },
+  { id: 'profile' as DashboardTab, label: 'Profile', icon: IconUserCircle },
+  { id: 'gmail' as DashboardTab, label: 'Gmail', icon: IconBrandGmail },
+];
+
+function greetingForCurrentTime() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+}
 
 export default function Dashboard() {
   const { getToken } = useAuth();
@@ -12,453 +69,423 @@ export default function Dashboard() {
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState<DashboardTab>('outreach');
   const [showNewFlowModal, setShowNewFlowModal] = useState(false);
-
-  const [stats, setStats] = useState({
-    totalCampaigns: 0,
-    draftsCount: 0,
-    sentCount: 0,
-    generatedCount: 0,
-    profileCompleted: false,
-    profileSkillsCount: 0,
-  });
+  const [stats, setStats] = useState(initialStats);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [overviewError, setOverviewError] = useState(false);
+  const [gmailStatus, setGmailStatus] = useState<GmailStatus>({
+    connected: false,
+    loading: true,
+  });
 
-  const [gmailStatus, setGmailStatus] = useState<{
-    connected: boolean;
-    gmail_accessible?: boolean;
-    email_address?: string;
-    loading: boolean;
-  }>({ connected: false, loading: true });
-
-  const fetchGmailStatus = async () => {
+  const fetchGmailStatus = useCallback(async () => {
     try {
       const token = await getToken();
       if (!token) return;
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/gmail/status`, {
-        headers: { Authorization: `Bearer ${token}` }
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/gmail/status`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) {
-        const data = await res.json();
-        setGmailStatus({ ...data, loading: false });
-      } else {
-        setGmailStatus(prev => ({ ...prev, loading: false }));
+
+      if (!response.ok) {
+        setGmailStatus((previous) => ({ ...previous, loading: false }));
+        return;
       }
-    } catch (err) {
-      setGmailStatus(prev => ({ ...prev, loading: false }));
+
+      const data = await response.json() as Omit<GmailStatus, 'loading'>;
+      setGmailStatus({ ...data, loading: false });
+    } catch {
+      setGmailStatus((previous) => ({ ...previous, loading: false }));
     }
-  };
+  }, [getToken]);
 
-  const fetchOverviewStats = async () => {
+  const fetchOverviewStats = useCallback(async () => {
     setStatsLoading(true);
+    setOverviewError(false);
+
     try {
       const token = await getToken();
       if (!token) return;
-      const resOutreach = await fetch(`${import.meta.env.VITE_API_URL}/api/outreach`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (resOutreach.ok) {
-        const campaigns = await resOutreach.json();
-        const generated = campaigns.filter((c: any) => Boolean(c.generated_draft)).length;
-        const drafts = campaigns.filter((c: any) => c.status === 'draft_created' || c.status === 'synced' || c.is_saved_in_drafts).length;
-        const sent = campaigns.filter((c: any) => c.status === 'sent' || c.status === 'completed').length;
-        setStats(prev => ({
-          ...prev,
+
+      const headers = { Authorization: `Bearer ${token}` };
+      const [outreachResponse, profileResponse] = await Promise.all([
+        fetch(`${import.meta.env.VITE_API_URL}/api/outreach`, { headers }),
+        fetch(`${import.meta.env.VITE_API_URL}/api/profile`, { headers }),
+      ]);
+
+      if (outreachResponse.ok) {
+        const campaigns = await outreachResponse.json() as CampaignOverview[];
+        const generatedCount = campaigns.filter((campaign) => Boolean(campaign.generated_draft)).length;
+        const draftsCount = campaigns.filter((campaign) => (
+          campaign.status === 'draft_created'
+          || campaign.status === 'synced'
+          || campaign.is_saved_in_drafts
+        )).length;
+        const sentCount = campaigns.filter((campaign) => (
+          campaign.status === 'sent' || campaign.status === 'completed'
+        )).length;
+
+        setStats((previous) => ({
+          ...previous,
           totalCampaigns: campaigns.length,
-          generatedCount: generated,
-          draftsCount: drafts,
-          sentCount: sent
+          generatedCount,
+          draftsCount,
+          sentCount,
         }));
+      } else {
+        setOverviewError(true);
       }
-      const resProfile = await fetch(`${import.meta.env.VITE_API_URL}/api/profile`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (resProfile.ok) {
-        const prof = await resProfile.json();
-        setStats(prev => ({
-          ...prev,
-          profileCompleted: Boolean(prof.name && prof.headline && prof.resume),
-          profileSkillsCount: prof.skills ? prof.skills.length : 0
+
+      if (profileResponse.ok) {
+        const profile = await profileResponse.json() as ProfileOverview;
+        setStats((previous) => ({
+          ...previous,
+          profileCompleted: Boolean(profile.name && profile.headline && profile.resume),
+          profileSkillsCount: Array.isArray(profile.skills) ? profile.skills.length : 0,
         }));
+      } else if (profileResponse.status !== 404) {
+        setOverviewError(true);
       }
-    } catch (err) {
-      console.error('Failed to fetch overview stats', err);
+    } catch {
+      setOverviewError(true);
     } finally {
       setStatsLoading(false);
     }
-  };
+  }, [getToken]);
+
+  const refreshDashboard = useCallback(async () => {
+    await Promise.all([fetchGmailStatus(), fetchOverviewStats()]);
+  }, [fetchGmailStatus, fetchOverviewStats]);
 
   useEffect(() => {
-    if (session) {
-      fetchGmailStatus();
-      fetchOverviewStats();
-    }
-  }, [session]);
+    if (!session) return;
 
-  const handleConnectGmail = async (e: React.MouseEvent) => {
-    e.preventDefault();
+    const refreshTimer = window.setTimeout(() => {
+      void refreshDashboard();
+    }, 0);
+
+    return () => window.clearTimeout(refreshTimer);
+  }, [session, refreshDashboard]);
+
+  const handleConnectGmail = async (event: React.MouseEvent) => {
+    event.preventDefault();
     if (!user) return;
+
     try {
       const googleAccount = user.externalAccounts.find(
-        a => a.provider === 'google' || a.verification?.strategy === 'oauth_google'
+        (account) => account.provider === 'google' || account.verification?.strategy === 'oauth_google',
       );
+
       if (googleAccount) {
         const updated = await googleAccount.reauthorize({
           additionalScopes: ['https://www.googleapis.com/auth/gmail.compose'],
-          redirectUrl: window.location.href
+          redirectUrl: window.location.href,
         });
         if (updated.verification?.externalVerificationRedirectURL) {
           window.location.href = updated.verification.externalVerificationRedirectURL.toString();
         }
-      } else {
-        const newAcc = await user.createExternalAccount({
-          strategy: 'oauth_google',
-          redirectUrl: window.location.href,
-          additionalScopes: ['https://www.googleapis.com/auth/gmail.compose']
-        });
-        if (newAcc?.verification?.externalVerificationRedirectURL) {
-          window.location.href = newAcc.verification.externalVerificationRedirectURL.toString();
-        }
+        return;
       }
-    } catch (err) {
-      console.error('Failed to connect Gmail', err);
+
+      const newAccount = await user.createExternalAccount({
+        strategy: 'oauth_google',
+        redirectUrl: window.location.href,
+        additionalScopes: ['https://www.googleapis.com/auth/gmail.compose'],
+      });
+      if (newAccount?.verification?.externalVerificationRedirectURL) {
+        window.location.href = newAccount.verification.externalVerificationRedirectURL.toString();
+      }
+    } catch (error) {
+      console.error('Failed to connect Gmail', error);
     }
   };
 
+  const gmailReady = Boolean(gmailStatus.connected && gmailStatus.gmail_accessible);
+  const setupSteps = Number(stats.profileCompleted) + Number(gmailReady);
+  const setupProgress = setupSteps * 50;
+  const firstName = user?.firstName || user?.username || 'there';
+
+  const metrics = useMemo(() => [
+    {
+      label: 'Prospects',
+      value: stats.totalCampaigns,
+      helper: 'Total outreach flows',
+      icon: IconBriefcase,
+      tone: 'ink',
+    },
+    {
+      label: 'Emails ready',
+      value: stats.generatedCount,
+      helper: 'Personalized drafts generated',
+      icon: IconSparkles,
+      tone: 'violet',
+    },
+    {
+      label: 'Saved to Gmail',
+      value: stats.draftsCount,
+      helper: 'Ready for your final review',
+      icon: IconMailCheck,
+      tone: 'blue',
+    },
+    {
+      label: 'Completed',
+      value: stats.sentCount,
+      helper: 'Outreach flows finished',
+      icon: IconSend,
+      tone: 'green',
+    },
+  ], [stats]);
+
   return (
-    <div className="w-full min-h-screen bg-[#F8F7F3] text-[#1A1A1A] flex flex-col" style={{ fontFamily: "'Lato', system-ui, sans-serif" }}>
-
-      {/* ═══ NAV ═══════════════════════════════════════════════════════════════ */}
-      <nav
-        className="flex flex-col gap-0 px-4 sm:px-6 lg:px-12 md:h-[68px] md:flex-row md:items-center md:justify-between"
-        style={{
-          backgroundColor: '#FFFFFF',
-          borderBottom: '1px solid #E8E6DD',
-          position: 'sticky',
-          top: 0,
-          zIndex: 50,
-          boxShadow: '0 1px 0 #E8E6DD',
-        }}
-      >
-        {/* Left: Brand + Nav links */}
-        <div className="flex w-full items-center justify-between gap-4 py-3 md:w-auto md:justify-start md:gap-10 md:py-0">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '22px', fontWeight: 700, letterSpacing: '0.04em', color: '#1A1A1A' }}>
-              REACHER
-            </span>
-            <span style={{
-              fontSize: '9px', fontWeight: 700, letterSpacing: '0.12em',
-              background: '#1A1A1A', color: '#FDFCF8', padding: '2px 7px',
-              borderRadius: '3px', textTransform: 'uppercase'
-            }}>PRO</span>
-          </div>
-
-          {/* Gmail + avatar ride alongside the brand on mobile so the tab strip
-              gets a full row of its own */}
-          <div className="flex items-center gap-2 md:hidden">
-            {gmailStatus.connected && gmailStatus.gmail_accessible ? (
-              <span
-                title={gmailStatus.email_address || 'Gmail Synced'}
-                style={{
-                  width: '9px', height: '9px', borderRadius: '50%',
-                  background: '#22C55E', flexShrink: 0,
-                }}
-              />
-            ) : (
-              <button
-                onClick={handleConnectGmail}
-                aria-label="Connect Gmail"
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  width: '34px', height: '34px',
-                  background: '#FFFFFF', borderRadius: '100px',
-                  border: '1px solid #E8E6DD', cursor: 'pointer',
-                }}
-              >
-                <IconBrandGmail style={{ width: '16px', height: '16px', color: '#4285F4' }} />
-              </button>
-            )}
-            <UserButton appearance={{ elements: { userButtonAvatarBox: 'w-8 h-8' } }} />
-          </div>
-        </div>
-
-        {/* Tab strip: own scrollable row on mobile, inline on desktop */}
-        <div className="-mx-4 flex items-center gap-1 overflow-x-auto px-4 pb-2 md:mx-0 md:ml-8 md:overflow-visible md:border-l md:border-[#E8E6DD] md:pb-0 md:pl-8">
-          {[
-            { id: 'outreach' as DashboardTab, label: 'Dashboard' },
-            { id: 'profile' as DashboardTab, label: 'Profile' },
-            { id: 'gmail' as DashboardTab, label: 'Settings' },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className="shrink-0"
-              style={{
-                padding: '7px 16px',
-                fontSize: '12px',
-                fontWeight: activeTab === tab.id ? 700 : 500,
-                letterSpacing: '0.03em',
-                borderRadius: '7px',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                backgroundColor: activeTab === tab.id ? '#1A1A1A' : 'transparent',
-                color: activeTab === tab.id ? '#FFFFFF' : '#6B6B6B',
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Right: Gmail status + Avatar (desktop only) */}
-        <div className="hidden items-center gap-4 md:flex">
-          {gmailStatus.connected && gmailStatus.gmail_accessible ? (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '8px',
-              fontSize: '12px', fontWeight: 500, color: '#166534',
-              background: '#F0FDF4', padding: '6px 14px',
-              borderRadius: '100px', border: '1px solid #BBF7D0',
-              maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}>
-              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#22C55E', flexShrink: 0 }} />
-              {gmailStatus.email_address || 'Gmail Synced'}
-            </div>
-          ) : (
-            <button
-              onClick={handleConnectGmail}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '8px',
-                fontSize: '12px', fontWeight: 600, color: '#1A1A1A',
-                background: '#FFFFFF', padding: '7px 16px',
-                borderRadius: '100px', border: '1px solid #E8E6DD',
-                cursor: 'pointer', transition: 'all 0.15s ease',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-                whiteSpace: 'nowrap',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#F0EFE9')}
-              onMouseLeave={e => (e.currentTarget.style.background = '#FFFFFF')}
-            >
-              <IconBrandGmail style={{ width: '15px', height: '15px', color: '#4285F4' }} />
-              Connect Gmail
-            </button>
-          )}
-          <UserButton appearance={{ elements: { userButtonAvatarBox: 'w-8 h-8' } }} />
-        </div>
-      </nav>
-
-      {/* ═══ PAGE BODY ══════════════════════════════════════════════════════════ */}
-      <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col px-4 sm:px-6 lg:px-12">
-
-        {/* ─── HERO HEADER (Dashboard tab only) ────────────────────────────────── */}
-        {activeTab === 'outreach' && <section className="flex flex-col items-start justify-between gap-8 border-b border-[#E8E6DD] pt-8 pb-8 md:flex-row md:gap-10 md:pt-[52px] md:pb-[52px]">
-          {/* Left copy */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '580px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#888' }}>
-                Pipeline Overview
-              </span>
-              <span style={{ fontSize: '10px', color: '#CCC' }}>·</span>
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: '5px',
-                fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
-                background: '#F0FDF4', color: '#166534', padding: '3px 10px',
-                borderRadius: '100px', border: '1px solid #BBF7D0'
-              }}>
-                <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#22C55E', display: 'inline-block' }} />
-                System Active
-              </span>
-            </div>
-
-            <h1
-              className="text-[38px] sm:text-[48px] lg:text-[60px]"
-              style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 500, lineHeight: 1.05, letterSpacing: '-0.02em', color: '#1A1A1A', margin: 0 }}
-            >
-              Automation Flow
-            </h1>
-
-            <p style={{ fontSize: '14px', lineHeight: 1.7, color: '#666', margin: 0, maxWidth: '520px' }}>
-              Powered by Google ADK Integration. Seamlessly analyzing prospects and saving highly targeted messages directly to your Gmail drafts via Automatic Personalization.
-            </p>
-          </div>
-
-          {/* Right: single Gmail drafts card */}
-          <div
-            className="w-full shrink-0 px-6 py-5 md:w-auto md:px-7 md:py-6"
-            style={{
-              background: '#FFFFFF', border: '1px solid #E8E6DD',
-              borderRadius: '14px',
-              display: 'flex', alignItems: 'center', gap: '20px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-            }}
+    <div className="dashboard-shell">
+      <header className="dashboard-topbar">
+        <div className="dashboard-topbar-inner">
+          <button
+            type="button"
+            className="dashboard-brand"
+            onClick={() => setActiveTab('outreach')}
+            aria-label="Open Reacher dashboard"
           >
-            <div>
-              <div className="text-[42px] md:text-[52px]" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 500, lineHeight: 1, color: statsLoading ? '#CCC' : '#1A1A1A', transition: 'color 0.2s' }}>
-                {statsLoading ? '—' : stats.draftsCount}
-              </div>
-              <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#888', marginTop: '8px' }}>
-                {statsLoading ? 'Retrieving…' : 'Gmail Drafts Saved'}
-              </div>
-            </div>
-            <div style={{
-              width: '44px', height: '44px', borderRadius: '50%',
-              background: '#EEF4FF', border: '1px solid #C7D8FA',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0, marginLeft: 'auto',
-            }}>
-              <span className="material-symbols-outlined" style={{ fontSize: '20px', color: '#4A90E2' }}>mark_email_read</span>
-            </div>
-          </div>
-        </section>}
+            <img src="/reacher-icon-192.png" alt="" />
+            <span className="dashboard-brand-name">REACHER</span>
+            <span className="dashboard-brand-badge">PRO</span>
+          </button>
 
-        {/* ─── METRICS GRID (Dashboard tab only) ───────────────────────────────── */}
-        {activeTab === 'outreach' && <section className="border-b border-[#E8E6DD] pt-8 pb-8 md:pt-10 md:pb-12">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {[
-              { value: stats.totalCampaigns, label: 'Prospects Analyzed' },
-              { value: stats.generatedCount, label: 'Emails Generated' },
-              { value: stats.draftsCount,    label: 'Gmail Drafts Created' },
-            ].map((metric, i) => (
-              <div
-                key={i}
-                className="px-6 py-5 md:px-7 md:py-6"
-                style={{
-                  background: '#FFFFFF', border: '1px solid #E8E6DD',
-                  borderRadius: '12px',
-                  display: 'flex', flexDirection: 'column', gap: '12px',
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-                  transition: 'border-color 0.15s, box-shadow 0.15s',
-                  cursor: 'default',
-                }}
-              >
-                <span className="text-[38px] md:text-[48px]" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 500, lineHeight: 1, color: statsLoading ? '#CCC' : '#1A1A1A', transition: 'color 0.2s' }}>
-                  {statsLoading ? '—' : metric.value}
-                </span>
-                <span style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#888' }}>
-                  {statsLoading ? 'Retrieving…' : metric.label}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>}
+          <nav className="dashboard-nav" aria-label="Workspace navigation">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`dashboard-nav-item ${activeTab === item.id ? 'is-active' : ''}`}
+                  onClick={() => setActiveTab(item.id)}
+                  aria-current={activeTab === item.id ? 'page' : undefined}
+                >
+                  <Icon aria-hidden="true" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
 
-        {/* ─── MAIN TAB CONTENT ─────────────────────────────────────────────────── */}
-        <div className={`flex-1 pb-16 md:pb-20 ${activeTab === 'outreach' ? 'pt-8 md:pt-12' : 'pt-8 md:pt-10'}`}>
-          {activeTab === 'outreach' && (
-            <OutreachForm
-              gmailStatus={gmailStatus}
-              onConnectGmail={handleConnectGmail}
-              onUpdateStats={fetchOverviewStats}
-              showCreateModal={showNewFlowModal}
-              setShowCreateModal={setShowNewFlowModal}
-            />
-          )}
-          {activeTab === 'profile' && (
-            <ProfileForm onUpdateStats={fetchOverviewStats} />
-          )}
-          {activeTab === 'gmail' && (
-            <div style={{ maxWidth: '720px' }}>
-              <div
-                className="p-6 sm:p-8 md:p-10"
-                style={{
-                  background: '#FFFFFF', border: '1px solid #E8E6DD',
-                  borderRadius: '16px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-                }}
-              >
-                <div style={{ borderBottom: '1px solid #E8E6DD', paddingBottom: '28px', marginBottom: '28px' }}>
-                  <div style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '6px',
-                    fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
-                    background: '#EEF4FF', color: '#4A90E2', padding: '4px 12px',
-                    borderRadius: '100px', border: '1px solid #C7D8FA', marginBottom: '16px'
-                  }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>mail</span>
-                    Direct Gmail Drafts API
+          <div className="dashboard-account">
+            <button
+              type="button"
+              className={`dashboard-connection ${gmailReady ? 'is-connected' : ''}`}
+              onClick={gmailReady ? () => setActiveTab('gmail') : handleConnectGmail}
+            >
+              <span className="dashboard-connection-dot" aria-hidden="true" />
+              <span className="dashboard-connection-copy">
+                {gmailStatus.loading
+                  ? 'Checking Gmail'
+                  : gmailReady
+                    ? gmailStatus.email_address || 'Gmail connected'
+                    : 'Connect Gmail'}
+              </span>
+            </button>
+            <UserButton appearance={{ elements: { userButtonAvatarBox: 'w-9 h-9' } }} />
+          </div>
+        </div>
+      </header>
+
+      <main className="dashboard-main">
+        {activeTab === 'outreach' && (
+          <>
+            <section className="dashboard-welcome" aria-labelledby="dashboard-heading">
+              <div className="dashboard-welcome-copy">
+                <p className="dashboard-eyebrow">Workspace overview</p>
+                <h1 id="dashboard-heading">{greetingForCurrentTime()}, {firstName}.</h1>
+                <p>Review your pipeline, prepare personalized emails, and move the next opportunity forward.</p>
+              </div>
+
+              <div className="dashboard-welcome-actions">
+                <button
+                  type="button"
+                  className="dashboard-icon-button"
+                  onClick={() => void refreshDashboard()}
+                  aria-label="Refresh dashboard"
+                  title="Refresh dashboard"
+                  disabled={statsLoading}
+                >
+                  <IconRefresh className={statsLoading ? 'is-spinning' : ''} aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  className="dashboard-primary-button"
+                  onClick={() => setShowNewFlowModal(true)}
+                >
+                  <IconPlus aria-hidden="true" />
+                  New outreach
+                </button>
+              </div>
+            </section>
+
+            {overviewError && (
+              <div className="dashboard-data-notice" role="status">
+                Live totals could not be refreshed. Your existing workspace is still available below.
+                <button type="button" onClick={() => void refreshDashboard()}>Try again</button>
+              </div>
+            )}
+
+            <section className="dashboard-metrics" aria-label="Outreach metrics">
+              {metrics.map((metric) => {
+                const Icon = metric.icon;
+                return (
+                  <article key={metric.label} className="dashboard-metric">
+                    <div className={`dashboard-metric-icon tone-${metric.tone}`}>
+                      <Icon aria-hidden="true" />
+                    </div>
+                    <div className="dashboard-metric-content">
+                      <span className="dashboard-metric-label">{metric.label}</span>
+                      <strong>{statsLoading ? '-' : metric.value}</strong>
+                      <span className="dashboard-metric-helper">{metric.helper}</span>
+                    </div>
+                  </article>
+                );
+              })}
+            </section>
+
+            <section className="dashboard-readiness" aria-labelledby="readiness-heading">
+              <div className="dashboard-readiness-summary">
+                <div className="dashboard-section-heading">
+                  <p className="dashboard-eyebrow">Workspace readiness</p>
+                  <h2 id="readiness-heading">{setupSteps === 2 ? 'You are ready to reach out' : 'Finish setting up your workspace'}</h2>
+                </div>
+                <div className="dashboard-progress-row">
+                  <div className="dashboard-progress-track" aria-hidden="true">
+                    <span style={{ width: `${setupProgress}%` }} />
                   </div>
-                  <h2 className="text-[26px] sm:text-[32px]" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 500, color: '#1A1A1A', marginBottom: '10px' }}>
-                    Gmail Integration
-                  </h2>
-                  <p style={{ fontSize: '14px', lineHeight: 1.6, color: '#666' }}>
-                    Reacher connects securely via Google OAuth to create personalized cold outreach drafts directly in your primary Gmail account.
+                  <span>{setupSteps} of 2 complete</span>
+                </div>
+              </div>
+
+              <div className="dashboard-readiness-steps">
+                <button type="button" onClick={() => setActiveTab('profile')}>
+                  <span className={`dashboard-step-icon ${stats.profileCompleted ? 'is-complete' : ''}`}>
+                    {stats.profileCompleted ? <IconCheck aria-hidden="true" /> : <IconFileCv aria-hidden="true" />}
+                  </span>
+                  <span className="dashboard-step-copy">
+                    <strong>Candidate profile</strong>
+                    <small>{stats.profileCompleted ? `${stats.profileSkillsCount} skills added` : 'Add your resume, role, and skills'}</small>
+                  </span>
+                  <span className={`dashboard-step-status ${stats.profileCompleted ? 'is-complete' : ''}`}>
+                    {stats.profileCompleted ? 'Complete' : 'Set up'}
+                  </span>
+                  <IconChevronRight className="dashboard-step-arrow" aria-hidden="true" />
+                </button>
+
+                <button type="button" onClick={gmailReady ? () => setActiveTab('gmail') : handleConnectGmail}>
+                  <span className={`dashboard-step-icon ${gmailReady ? 'is-complete' : ''}`}>
+                    {gmailReady ? <IconCheck aria-hidden="true" /> : <IconBrandGmail aria-hidden="true" />}
+                  </span>
+                  <span className="dashboard-step-copy">
+                    <strong>Gmail connection</strong>
+                    <small>{gmailReady ? gmailStatus.email_address || 'Compose access active' : 'Connect Gmail to save drafts'}</small>
+                  </span>
+                  <span className={`dashboard-step-status ${gmailReady ? 'is-complete' : ''}`}>
+                    {gmailReady ? 'Connected' : 'Connect'}
+                  </span>
+                  <IconChevronRight className="dashboard-step-arrow" aria-hidden="true" />
+                </button>
+              </div>
+            </section>
+
+            <section className="dashboard-workspace" aria-label="Outreach workspace">
+              <OutreachForm
+                gmailStatus={gmailStatus}
+                onConnectGmail={handleConnectGmail}
+                onUpdateStats={fetchOverviewStats}
+                showCreateModal={showNewFlowModal}
+                setShowCreateModal={setShowNewFlowModal}
+              />
+            </section>
+          </>
+        )}
+
+        {activeTab === 'profile' && (
+          <section className="dashboard-tab-page" aria-labelledby="profile-heading">
+            <div className="dashboard-page-heading">
+              <div>
+                <p className="dashboard-eyebrow">Personalization source</p>
+                <h1 id="profile-heading">Your candidate profile</h1>
+                <p>Keep this current so every outreach email reflects your strongest, most relevant experience.</p>
+              </div>
+              <button type="button" className="dashboard-secondary-button" onClick={() => setActiveTab('outreach')}>
+                <IconLayoutDashboard aria-hidden="true" />
+                Back to dashboard
+              </button>
+            </div>
+            <ProfileForm onUpdateStats={fetchOverviewStats} />
+          </section>
+        )}
+
+        {activeTab === 'gmail' && (
+          <section className="dashboard-tab-page" aria-labelledby="gmail-heading">
+            <div className="dashboard-page-heading">
+              <div>
+                <p className="dashboard-eyebrow">Delivery connection</p>
+                <h1 id="gmail-heading">Gmail integration</h1>
+                <p>Manage the account Reacher uses to save personalized emails to your drafts.</p>
+              </div>
+              <button type="button" className="dashboard-secondary-button" onClick={() => setActiveTab('outreach')}>
+                <IconLayoutDashboard aria-hidden="true" />
+                Back to dashboard
+              </button>
+            </div>
+
+            <div className="dashboard-gmail-panel">
+              <div className="dashboard-gmail-status">
+                <div className={`dashboard-gmail-mark ${gmailReady ? 'is-connected' : ''}`}>
+                  <IconBrandGmail aria-hidden="true" />
+                </div>
+                <div>
+                  <span className={`dashboard-status-badge ${gmailReady ? 'is-connected' : ''}`}>
+                    <span aria-hidden="true" />
+                    {gmailStatus.loading ? 'Checking connection' : gmailReady ? 'Connection active' : 'Not connected'}
+                  </span>
+                  <h2>{gmailReady ? 'Gmail is ready for drafts' : 'Connect your Gmail account'}</h2>
+                  <p>
+                    {gmailReady
+                      ? `Reacher can save drafts to ${gmailStatus.email_address || 'your connected account'}.`
+                      : 'Authorize compose-only access so Reacher can create drafts without reading or sending your email.'}
                   </p>
                 </div>
+              </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '28px' }}>
-                  {[
-                    {
-                      label: 'OAuth Permission Scope',
-                      value: 'https://www.googleapis.com/auth/gmail.compose',
-                      badge: 'Compose Only · Safe',
-                      badgeColor: { bg: '#F0FDF4', text: '#166534', border: '#BBF7D0' }
-                    },
-                    {
-                      label: 'Connected Account',
-                      value: gmailStatus.connected && gmailStatus.email_address ? gmailStatus.email_address : 'No Gmail account linked yet',
-                      badge: gmailStatus.connected && gmailStatus.gmail_accessible ? 'Active' : 'Disconnected',
-                      badgeColor: gmailStatus.connected && gmailStatus.gmail_accessible
-                        ? { bg: '#F0FDF4', text: '#166534', border: '#BBF7D0' }
-                        : { bg: '#FFF1F2', text: '#9F1239', border: '#FECDD3' }
-                    }
-                  ].map((row, i) => (
-                    <div
-                      key={i}
-                      className="flex flex-col items-start gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5"
-                      style={{
-                        background: '#F8F7F3', border: '1px solid #E8E6DD',
-                        borderRadius: '10px',
-                      }}
-                    >
-                      <div style={{ minWidth: 0, maxWidth: '100%' }}>
-                        <p style={{ fontSize: '13px', fontWeight: 600, color: '#1A1A1A', marginBottom: '3px' }}>{row.label}</p>
-                        <p style={{ fontSize: '12px', color: '#666', fontFamily: i === 0 ? 'monospace' : 'inherit', overflowWrap: 'anywhere' }}>{row.value}</p>
-                      </div>
-                      <span style={{
-                        fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em',
-                        padding: '4px 12px', borderRadius: '100px',
-                        background: row.badgeColor.bg, color: row.badgeColor.text, border: `1px solid ${row.badgeColor.border}`,
-                        whiteSpace: 'nowrap', flexShrink: 0
-                      }}>
-                        {row.badge}
-                      </span>
-                    </div>
-                  ))}
+              <dl className="dashboard-gmail-details">
+                <div>
+                  <dt>Connected account</dt>
+                  <dd>{gmailStatus.email_address || 'No account linked'}</dd>
                 </div>
+                <div>
+                  <dt>Permission</dt>
+                  <dd>Compose drafts only</dd>
+                </div>
+                <div>
+                  <dt>Sending</dt>
+                  <dd>Always controlled by you</dd>
+                </div>
+              </dl>
 
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button
-                    onClick={handleConnectGmail}
-                    style={{
-                      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                      padding: '13px 20px', borderRadius: '9px', border: 'none',
-                      fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
-                      color: '#FFFFFF', background: '#1A1A1A', cursor: 'pointer', transition: 'background 0.15s',
-                      minHeight: '44px', textAlign: 'center', lineHeight: 1.3,
-                    }}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: '16px', flexShrink: 0 }}>sync</span>
-                    {gmailStatus.connected ? 'Reconnect' : 'Connect Gmail'}
-                  </button>
-                  <a
-                    href="https://myaccount.google.com/permissions"
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      width: '44px', height: '44px', borderRadius: '9px',
-                      border: '1px solid #E8E6DD', color: '#666',
-                      background: '#FFFFFF', transition: 'all 0.15s', textDecoration: 'none',
-                      flexShrink: 0,
-                    }}
-                    title="Manage Google Permissions"
-                  >
-                    <IconArrowUpRight style={{ width: '18px', height: '18px' }} />
-                  </a>
-                </div>
+              <div className="dashboard-gmail-actions">
+                <button type="button" className="dashboard-primary-button" onClick={handleConnectGmail}>
+                  <IconRefresh aria-hidden="true" />
+                  {gmailReady ? 'Reconnect Gmail' : 'Connect Gmail'}
+                </button>
+                <a
+                  href="https://myaccount.google.com/permissions"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="dashboard-secondary-button"
+                >
+                  Manage Google access
+                  <IconArrowUpRight aria-hidden="true" />
+                </a>
               </div>
             </div>
-          )}
-        </div>
-      </div>
+          </section>
+        )}
+      </main>
     </div>
   );
 }
