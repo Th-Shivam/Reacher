@@ -26,16 +26,6 @@ async def upload_my_resume(
     file: UploadFile = File(...),
     user_id: str = Depends(get_current_user)
 ):
-    # Validate content type
-    if file.content_type != "application/pdf":
-        raise HTTPException(status_code=400, detail="Only PDF files are allowed.")
-    
-    # Check file size (approximate using seek if needed, but usually done via middleware or reading)
-    # Simple check: if it's over ~5MB
-    MAX_SIZE = 5 * 1024 * 1024
-    if file.size and file.size > MAX_SIZE:
-        raise HTTPException(status_code=400, detail="File too large. Max 5MB.")
-        
     profile = await profile_service.upload_resume(
         user_id,
         file,
