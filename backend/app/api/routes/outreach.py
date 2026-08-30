@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Header, Request
 from typing import List
-from pydantic import BaseModel
 import json
+import logging
 # pyrefly: ignore [missing-import]
 from bson import ObjectId
 from app.api.dependencies import get_current_user
@@ -10,6 +10,18 @@ from app.services import outreach as outreach_service
 from app.services import profile as profile_service
 from app.services.gmail import create_gmail_draft
 from app.services.pipeline import run_full_pipeline
+from app.services.abuse import (
+    acquire_outreach_lock,
+    claim_idempotency,
+    complete_idempotency,
+    delete_idempotency,
+    idempotency_conflict,
+    release_outreach_lock,
+    reserve_outreach_capacity,
+    rollback_outreach_capacity,
+)
+from app.core.security import payload_fingerprint
+from app.core.safe_logging import log_exception
 from app.db.mongodb import outreach_collection, candidate_profiles_collection
 # pyrefly: ignore [missing-import]
 from app.agents.jd_analyzer import JDAnalyzerAgent
@@ -19,21 +31,79 @@ from app.agents.research_agent import ResearchAgent
 from app.agents.reviewer_agent import ReviewerAgent
 
 router = APIRouter()
+log = logging.getLogger(__name__)
+
+
+def _processing_error(operation: str) -> HTTPException:
+    log_exception(log, "%s failed", operation)
+    return HTTPException(
+        status_code=500,
+        detail="Something went wrong while processing the request.",
+    )
 
 @router.post("", response_model=OutreachInDB)
 async def create_campaign(
     outreach: OutreachCreate,
     background_tasks: BackgroundTasks,
+    idempotency_key: str = Header(
+        ...,
+        alias="Idempotency-Key",
+        min_length=8,
+        max_length=200,
+    ),
     user_id: str = Depends(get_current_user),
 ):
     """
     Create a new outreach campaign and immediately start the full
     automated pipeline in the background.
     """
-    campaign = await outreach_service.create_outreach_campaign(user_id, outreach)
-    # Fire-and-forget: full pipeline runs asynchronously
-    background_tasks.add_task(run_full_pipeline, campaign["_id"], user_id)
-    return campaign
+    fingerprint = payload_fingerprint(outreach.model_dump(mode="json"))
+    record_id, existing = await claim_idempotency(
+        user_id,
+        f"outreach:{idempotency_key}",
+        fingerprint,
+    )
+    if existing:
+        if existing.get("fingerprint") != fingerprint:
+            raise HTTPException(
+                status_code=409,
+                detail="The idempotency key was already used for a different request.",
+            )
+        if existing.get("status") == "completed" and existing.get("result_type") == "outreach":
+            return existing["result"]
+        raise idempotency_conflict()
+
+    lock_token = await acquire_outreach_lock(user_id)
+    if not lock_token:
+        await delete_idempotency(record_id)
+        raise HTTPException(
+            status_code=409,
+            detail="Another outreach pipeline is already running for this user.",
+        )
+
+    reserved = False
+    try:
+        await reserve_outreach_capacity(user_id)
+        reserved = True
+        campaign = await outreach_service.create_outreach_campaign(user_id, outreach)
+        await complete_idempotency(record_id, campaign, "outreach")
+        background_tasks.add_task(
+            run_full_pipeline,
+            campaign["_id"],
+            user_id,
+            lock_token,
+        )
+        return campaign
+    except HTTPException:
+        await release_outreach_lock(user_id, lock_token)
+        await delete_idempotency(record_id)
+        raise
+    except Exception:
+        if reserved:
+            await rollback_outreach_capacity(user_id)
+        await release_outreach_lock(user_id, lock_token)
+        await delete_idempotency(record_id)
+        raise _processing_error("Outreach campaign creation")
 
 
 @router.get("", response_model=List[OutreachInDB])
@@ -68,8 +138,8 @@ async def analyze_job_description(campaign_id: str, user_id: str = Depends(get_c
     # Initialize the agent
     try:
         agent = JDAnalyzerAgent()
-    except ValueError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except ValueError:
+        raise _processing_error("JD analyzer initialization")
 
     # Run the agent
     try:
@@ -94,8 +164,8 @@ async def analyze_job_description(campaign_id: str, user_id: str = Depends(get_c
             "campaign_id": campaign_id,
             "analysis": analysis_data
         }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Agent Analysis Failed: {str(e)}")
+    except Exception:
+        raise _processing_error("JD analysis")
 
 @router.post("/{campaign_id}/analyze-candidate")
 async def analyze_candidate_profile(campaign_id: str, user_id: str = Depends(get_current_user)):
@@ -126,8 +196,8 @@ async def analyze_candidate_profile(campaign_id: str, user_id: str = Depends(get
     # Initialize the agent
     try:
         agent = CandidateAnalyzerAgent()
-    except ValueError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except ValueError:
+        raise _processing_error("Candidate analyzer initialization")
 
     # Strip sensitive or unnecessary info from profile dump before sending to AI
     profile_data = {
@@ -159,8 +229,8 @@ async def analyze_candidate_profile(campaign_id: str, user_id: str = Depends(get
             "campaign_id": campaign_id,
             "analysis": analysis_data
         }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Candidate Analysis Failed: {str(e)}")
+    except Exception:
+        raise _processing_error("Candidate analysis")
 
 @router.post("/{campaign_id}/research-company")
 async def research_company(campaign_id: str, user_id: str = Depends(get_current_user)):
@@ -186,8 +256,8 @@ async def research_company(campaign_id: str, user_id: str = Depends(get_current_
 
     try:
         agent = ResearchAgent()
-    except ValueError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except ValueError:
+        raise _processing_error("Research agent initialization")
 
     try:
         research_data = agent.research(campaign["company_name"])
@@ -205,8 +275,8 @@ async def research_company(campaign_id: str, user_id: str = Depends(get_current_
             "campaign_id": campaign_id,
             "research": research_data
         }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Company Research Failed: {str(e)}")
+    except Exception:
+        raise _processing_error("Company research")
 
 @router.post("/{campaign_id}/generate-draft")
 async def generate_outreach_draft(
@@ -270,8 +340,8 @@ async def generate_outreach_draft(
 
     try:
         agent = OutreachWriterAgent()
-    except ValueError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except ValueError:
+        raise _processing_error("Outreach writer initialization")
 
     try:
         draft = ensure_resume_link(agent.write(
@@ -295,8 +365,8 @@ async def generate_outreach_draft(
             "campaign_id": campaign_id,
             "draft": draft
         }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Draft Generation Failed: {str(e)}")
+    except Exception:
+        raise _processing_error("Draft generation")
 
 @router.post("/{campaign_id}/review-draft")
 async def review_outreach_draft(campaign_id: str, user_id: str = Depends(get_current_user)):
@@ -328,8 +398,8 @@ async def review_outreach_draft(campaign_id: str, user_id: str = Depends(get_cur
 
     try:
         agent = ReviewerAgent()
-    except ValueError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except ValueError:
+        raise _processing_error("Draft reviewer initialization")
 
     try:
         raw_review = agent.review(jd, draft)
@@ -349,5 +419,5 @@ async def review_outreach_draft(campaign_id: str, user_id: str = Depends(get_cur
             "campaign_id": campaign_id,
             "review": review_data
         }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Draft Review Failed: {str(e)}")
+    except Exception:
+        raise _processing_error("Draft review")
