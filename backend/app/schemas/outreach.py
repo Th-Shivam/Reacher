@@ -1,12 +1,14 @@
 from typing import Optional
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, ConfigDict, Field, EmailStr
 from datetime import datetime
 
 class OutreachBase(BaseModel):
-    company_name: str = Field(..., description="Name of the target company")
-    job_description: str = Field(..., description="The job description or role requirements")
+    company_name: str = Field(..., min_length=1, max_length=200, description="Name of the target company")
+    job_description: str = Field(..., min_length=1, max_length=10_000, description="The job description or role requirements")
 
 class OutreachCreate(OutreachBase):
+    model_config = ConfigDict(extra="forbid")
+
     contact_email: EmailStr = Field(..., description="Email of the recruiter or contact person")
 
 class OutreachInDB(OutreachBase):
@@ -25,6 +27,4 @@ class OutreachInDB(OutreachBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
-        populate_by_name = True
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)

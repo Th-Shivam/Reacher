@@ -1,5 +1,6 @@
 import os
 from google import genai
+from app.core.security import env_int
 
 # We will initialize the client when it's imported, 
 # ensuring the GEMINI_API_KEY environment variable is present.
@@ -7,7 +8,12 @@ def get_ai_client():
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         raise ValueError("GEMINI_API_KEY environment variable not set")
-    return genai.Client(api_key=api_key)
+    return genai.Client(
+        api_key=api_key,
+        http_options=genai.types.HttpOptions(
+            timeout=env_int("AI_REQUEST_TIMEOUT_SECONDS", 60) * 1000,
+        ),
+    )
 
 class Agent:
     """
@@ -32,6 +38,7 @@ class Agent:
             contents=prompt,
             config=genai.types.GenerateContentConfig(
                 system_instruction=self.instructions,
+                max_output_tokens=env_int("AI_MAX_OUTPUT_TOKENS", 4096),
             )
         )
         return response.text
@@ -45,6 +52,10 @@ class Agent:
             config=genai.types.GenerateContentConfig(
                 system_instruction=self.instructions,
                 tools=self.tools,
+                max_output_tokens=env_int("AI_MAX_OUTPUT_TOKENS", 4096),
+                automatic_function_calling=genai.types.AutomaticFunctionCallingConfig(
+                    maximum_remote_calls=env_int("MAX_WEB_SEARCHES_PER_RESEARCH", 2) + 1,
+                ),
             )
         )
         response = chat.send_message(prompt)

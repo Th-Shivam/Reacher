@@ -86,7 +86,11 @@ export const OutreachForm = ({ gmailStatus, onUpdateStats, showCreateModal, setS
       const token = await getToken();
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/outreach`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          'Idempotency-Key': crypto.randomUUID(),
+        },
         body: JSON.stringify(form)
       });
       if (!res.ok) throw new Error('Failed to create outreach campaign');
@@ -126,7 +130,11 @@ export const OutreachForm = ({ gmailStatus, onUpdateStats, showCreateModal, setS
       const token = await getToken();
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/gmail/draft`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Idempotency-Key': crypto.randomUUID(),
+        },
         body: JSON.stringify({
           recipient_email: email,
           subject,

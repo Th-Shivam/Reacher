@@ -1,13 +1,29 @@
 from datetime import datetime, timezone
 import hashlib
+import logging
 import os
 import secrets
+import tempfile
 from fastapi import UploadFile, HTTPException
 from appwrite.id import ID
 from appwrite.input_file import InputFile
+from pypdf import PdfReader
+from pypdf.errors import PdfReadError
 from app.core.appwrite import appwrite_storage
+from app.core.security import env_int
+from app.core.safe_logging import log_exception
 from app.db.mongodb import candidate_profiles_collection
 from app.schemas.profile import CandidateProfileCreate
+
+log = logging.getLogger(__name__)
+PDF_CONTENT_TYPE = "application/pdf"
+UPLOAD_CHUNK_SIZE = 64 * 1024
+
+
+def _safe_pdf_filename(filename: str | None) -> str:
+    cleaned = os.path.basename(filename or "resume.pdf")
+    cleaned = cleaned.replace("\r", "").replace("\n", "").replace('"', "")[:255]
+    return cleaned or "resume.pdf"
 
 
 def _public_api_base_url(fallback: str | None = None) -> str:
@@ -15,13 +31,14 @@ def _public_api_base_url(fallback: str | None = None) -> str:
     return (os.environ.get("PUBLIC_API_URL") or fallback or "").rstrip("/")
 
 
-def _create_resume_access_metadata(file_id: str, filename: str, content_type: str | None, public_base_url: str | None = None) -> dict:
+def _create_resume_access_metadata(file_id: str, filename: str, public_base_url: str | None = None) -> dict:
     """Create resume metadata with a bearer URL and only its hash for lookup."""
     token = secrets.token_urlsafe(32)
     metadata = {
         "file_id": file_id,
         "filename": filename,
-        "content_type": content_type or "application/pdf",
+        "content_type": PDF_CONTENT_TYPE,
+        "validated_pdf": True,
         "access_token_hash": hashlib.sha256(token.encode("utf-8")).hexdigest(),
     }
     base_url = _public_api_base_url(public_base_url)
@@ -35,9 +52,12 @@ def _public_profile(profile: dict) -> dict:
     result = dict(profile)
     resume = result.get("resume")
     if isinstance(resume, dict):
-        result["resume"] = {
-            key: value for key, value in resume.items() if key != "access_token_hash"
-        }
+        if resume.get("validated_pdf") is True and resume.get("content_type") == PDF_CONTENT_TYPE:
+            result["resume"] = {
+                key: value for key, value in resume.items() if key != "access_token_hash"
+            }
+        else:
+            result["resume"] = None
     return result
 
 async def get_profile(user_id: str) -> dict | None:
@@ -57,13 +77,17 @@ async def ensure_resume_link(user_id: str, public_base_url: str | None = None) -
     resume = profile.get("resume")
     if not isinstance(resume, dict) or not resume.get("file_id"):
         return profile
+    # Legacy records were not content-validated. Do not create public links for
+    # files whose PDF safety cannot be proven.
+    if resume.get("validated_pdf") is not True:
+        resume.pop("resume_url", None)
+        return profile
     if resume.get("access_token_hash") and resume.get("resume_url"):
         return profile
 
     metadata = _create_resume_access_metadata(
         file_id=resume["file_id"],
         filename=resume.get("filename") or "resume.pdf",
-        content_type=resume.get("content_type") or "application/pdf",
         public_base_url=public_base_url,
     )
     await candidate_profiles_collection.update_one(
@@ -90,36 +114,78 @@ async def upsert_profile(user_id: str, profile_data: CandidateProfileCreate) -> 
         
     return await get_profile(user_id)
 
+def _validate_pdf(path: str) -> None:
+    with open(path, "rb") as uploaded:
+        if uploaded.read(5) != b"%PDF-":
+            raise HTTPException(status_code=400, detail="Uploaded file is not a valid PDF.")
+        uploaded.seek(0)
+        try:
+            reader = PdfReader(uploaded, strict=False)
+            if reader.is_encrypted or len(reader.pages) < 1:
+                raise HTTPException(status_code=400, detail="Uploaded PDF cannot be processed.")
+        except HTTPException:
+            raise
+        except (PdfReadError, ValueError, TypeError, OSError):
+            raise HTTPException(status_code=400, detail="Uploaded file is not a valid PDF.")
+
+
+async def _stream_upload_to_tempfile(file: UploadFile) -> tuple[str, int]:
+    max_size = env_int("MAX_RESUME_SIZE_BYTES", 5 * 1024 * 1024)
+    total_size = 0
+    temporary = tempfile.NamedTemporaryFile(prefix="reacher-resume-", suffix=".pdf", delete=False)
+    path = temporary.name
+
+    try:
+        while chunk := await file.read(UPLOAD_CHUNK_SIZE):
+            total_size += len(chunk)
+            if total_size > max_size:
+                raise HTTPException(status_code=413, detail="Resume file is too large.")
+            temporary.write(chunk)
+        temporary.flush()
+    except Exception:
+        temporary.close()
+        if os.path.exists(path):
+            os.unlink(path)
+        raise
+    finally:
+        temporary.close()
+        await file.close()
+
+    if total_size == 0:
+        os.unlink(path)
+        raise HTTPException(status_code=400, detail="Resume file is empty.")
+    return path, total_size
+
+
 async def upload_resume(user_id: str, file: UploadFile, public_base_url: str | None = None) -> dict:
     bucket_id = os.environ.get("APPWRITE_BUCKET_ID")
     if not bucket_id:
-        raise HTTPException(status_code=500, detail="Appwrite bucket ID not configured")
+        log.error("Resume storage is not configured")
+        raise HTTPException(status_code=503, detail="Resume storage is temporarily unavailable.")
         
-    # Read file content
-    content = await file.read()
-    
-    # Generate unique ID for the file
-    file_id = ID.unique()
-    
-    # Upload to Appwrite
-    appwrite_file = InputFile.from_bytes(
-        content,
-        filename=file.filename or "resume.pdf",
-        mime_type=file.content_type
-    )
-    
-    # We use synchronous call for Appwrite SDK, could run in executor ideally but this is fine for now
-    uploaded_file = appwrite_storage.create_file(
-        bucket_id=bucket_id,
-        file_id=file_id,
-        file=appwrite_file
-    )
+    path, _ = await _stream_upload_to_tempfile(file)
+    try:
+        _validate_pdf(path)
+        appwrite_input = InputFile.from_path(path)
+        appwrite_input.mime_type = PDF_CONTENT_TYPE
+        uploaded_file = appwrite_storage.create_file(
+            bucket_id=bucket_id,
+            file_id=ID.unique(),
+            file=appwrite_input,
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        log_exception(log, "Resume upload failed for an authenticated user")
+        raise HTTPException(status_code=502, detail="Resume storage is temporarily unavailable.")
+    finally:
+        if os.path.exists(path):
+            os.unlink(path)
     
     # Prepare metadata for MongoDB
     resume_metadata = _create_resume_access_metadata(
         file_id=uploaded_file.id,
-        filename=file.filename or "resume.pdf",
-        content_type=file.content_type,
+        filename=_safe_pdf_filename(file.filename),
         public_base_url=public_base_url,
     )
     

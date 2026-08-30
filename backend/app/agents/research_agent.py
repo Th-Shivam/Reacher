@@ -1,5 +1,5 @@
 from app.core.ai import Agent
-from app.agents.tools import search_wikipedia, search_web
+from app.agents.tools import search_budget, search_wikipedia, search_web
 
 RESEARCH_INSTRUCTIONS = """
 You are a highly capable Company Research Assistant.
@@ -29,4 +29,5 @@ class ResearchAgent(Agent):
         Runs the research agent for the given company.
         """
         prompt = f"Please research this company: {company_name}"
-        return self.run_with_tools(prompt)
+        with search_budget():
+            return self.run_with_tools(prompt)
